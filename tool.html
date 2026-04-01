@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exhibitor Manager</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#7C3AED;
+  --primary-light:#EDE9FE;
+  --primary-dark:#5B21B6;
+  --bg:#F9FAFB;
+  --surface:#FFFFFF;
+  --border:#E5E7EB;
+  --text:#111827;
+  --text-muted:#6B7280;
+  --text-light:#9CA3AF;
+  --danger:#EF4444;
+  --danger-light:#FEE2E2;
+  --success:#10B981;
+  --success-light:#D1FAE5;
+  --warning:#F59E0B;
+  --warning-light:#FEF3C7;
+  --info:#3B82F6;
+  --info-light:#DBEAFE;
+  --radius:8px;
+  --shadow:0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,0.1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+h1{font-size:1.5rem;font-weight:700}
+h2{font-size:1.125rem;font-weight:600}
+h3{font-size:1rem;font-weight:600}
+
+/* LAYOUT */
+#app{display:flex;flex-direction:column;min-height:100vh}
+#header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+#header-logo{width:32px;height:32px;background:var(--primary);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+#header-title{font-weight:700;font-size:1rem}
+#header-event{font-size:0.75rem;color:var(--text-muted)}
+#header-actions{margin-left:auto;display:flex;gap:8px}
+
+/* TABS */
+#tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+#tabs::-webkit-scrollbar{display:none}
+.tab-btn{padding:12px 14px;font-size:0.8rem;font-weight:500;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color 0.15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+#content{flex:1;overflow:auto;padding:20px}
+
+/* CARDS & PANELS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.card+.card{margin-top:12px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:1rem;font-weight:600}
+
+/* METRICS */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.metric-value{font-size:1.6rem;font-weight:700;line-height:1.1}
+.metric-label{font-size:0.72rem;color:var(--text-muted);margin-top:4px}
+.metric-sub{font-size:0.75rem;color:var(--text-light);margin-top:2px}
+
+/* PROGRESS BAR */
+.progress-bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:4px}
+.progress-bar-fill{height:100%;border-radius:4px;background:var(--primary);transition:width 0.3s}
+.progress-bar-fill.success{background:var(--success)}
+.progress-bar-fill.warning{background:var(--warning)}
+.progress-bar-fill.danger{background:var(--danger)}
+
+/* TABLES */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);white-space:nowrap;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F9FAFB}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:0.7rem;font-weight:500;white-space:nowrap}
+.badge-enquiry{background:#F3F4F6;color:#374151}
+.badge-booked{background:var(--info-light);color:#1D4ED8}
+.badge-confirmed{background:var(--success-light);color:#065F46}
+.badge-cancelled{background:var(--danger-light);color:#991B1B}
+.badge-available{background:#F3F4F6;color:#374151}
+.badge-held{background:var(--info-light);color:#1D4ED8}
+.badge-allocated{background:var(--warning-light);color:#92400E}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:0.82rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all 0.15s;white-space:nowrap}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover:not(:disabled){background:var(--primary-dark)}
+.btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-secondary:hover:not(:disabled){background:var(--bg)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn-danger:hover:not(:disabled){background:#DC2626}
+.btn-sm{padding:4px 10px;font-size:0.75rem}
+.btn-icon{padding:6px;border-radius:var(--radius);background:none;border:1px solid var(--border);cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;transition:all 0.15s}
+.btn-icon:hover{background:var(--bg);color:var(--text)}
+
+/* FORMS */
+.form-group{margin-bottom:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:0.8rem;font-weight:500;color:var(--text);margin-bottom:4px}
+input,select,textarea{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.82rem;font-family:inherit;background:var(--surface);color:var(--text);transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+textarea{resize:vertical;min-height:70px}
+select{cursor:pointer}
+.form-hint{font-size:0.72rem;color:var(--text-muted);margin-top:3px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-md);width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-body{padding:20px}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.modal-close{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-muted);padding:2px 6px;line-height:1}
+.modal-close:hover{color:var(--text)}
+
+/* ALERTS */
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:0.82rem;margin-bottom:12px}
+.alert-info{background:var(--info-light);color:#1E40AF;border:1px solid #BFDBFE}
+.alert-success{background:var(--success-light);color:#065F46;border:1px solid #A7F3D0}
+.alert-warning{background:var(--warning-light);color:#92400E;border:1px solid #FDE68A}
+.alert-danger{background:var(--danger-light);color:#991B1B;border:1px solid #FECACA}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{background:#1F2937;color:#fff;padding:10px 16px;border-radius:var(--radius);font-size:0.82rem;box-shadow:var(--shadow-md);animation:slideIn 0.2s ease;max-width:320px}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* FLOOR PLAN */
+#floor-plan-container{width:100%;overflow:auto;border:1px solid var(--border);border-radius:var(--radius);background:#f8f9fa;position:relative}
+#floor-plan-svg{display:block}
+.fp-stand{cursor:pointer;transition:opacity 0.15s}
+.fp-stand:hover{opacity:0.85}
+.fp-label{font-size:9px;fill:#374151;pointer-events:none;text-anchor:middle;dominant-baseline:middle}
+.fp-zone-label{font-size:10px;fill:rgba(0,0,0,0.4);pointer-events:none;text-anchor:middle;font-style:italic}
+.fp-controls{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.fp-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:0.75rem}
+.fp-legend-item{display:flex;align-items:center;gap:4px}
+.fp-legend-dot{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+#fp-tooltip{position:absolute;background:#1F2937;color:#fff;padding:8px 12px;border-radius:6px;font-size:0.75rem;pointer-events:none;z-index:50;display:none;max-width:200px;line-height:1.4}
+
+/* EXHIBITOR CARDS */
+.exhibitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.exhibitor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:box-shadow 0.15s}
+.exhibitor-card:hover{box-shadow:var(--shadow-md)}
+.exhibitor-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.exhibitor-initials{width:36px;height:36px;border-radius:8px;background:var(--primary-light);color:var(--primary);font-weight:700;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.exhibitor-name{font-weight:600;font-size:0.9rem}
+.exhibitor-contact{font-size:0.75rem;color:var(--text-muted)}
+
+/* LOGISTICS CALENDAR */
+.logistics-calendar{display:grid;grid-template-columns:80px repeat(auto-fill,minmax(100px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:0.75rem}
+.lc-header{background:#F3F4F6;padding:6px 8px;font-weight:600;text-align:center}
+.lc-time{background:#F9FAFB;padding:6px 8px;color:var(--text-muted);font-size:0.7rem;text-align:right}
+.lc-slot{background:var(--surface);padding:4px 6px;min-height:32px}
+.lc-slot.has-entries{background:#EDE9FE}
+.lc-entry{background:var(--primary);color:#fff;border-radius:3px;padding:2px 4px;margin-bottom:2px;font-size:0.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* REQUIREMENTS SUMMARY */
+.req-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.req-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.req-summary-value{font-size:1.4rem;font-weight:700}
+.req-summary-label{font-size:0.75rem;color:var(--text-muted)}
+
+/* MANUAL PRINT */
+@media print{
+  #app>*:not(#content){display:none!important}
+  #content>*:not(#manual-print-area){display:none!important}
+  #manual-print-area{display:block!important}
+  .no-print{display:none!important}
+  .print-page{page-break-after:always}
+}
+#manual-print-area{display:none}
+
+/* SEARCH & FILTER */
+.search-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.search-input{flex:1;min-width:180px}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* TABS WITHIN SECTION */
+.sub-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px}
+.sub-tab{padding:8px 14px;font-size:0.8rem;font-weight:500;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent}
+.sub-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}
+  .metrics-grid{grid-template-columns:repeat(2,1fr)}
+  #content{padding:12px}
+  .exhibitor-grid{grid-template-columns:1fr}
+  .btn span{display:none}
+  .btn-sm span{display:inline}
+}
+@media(max-width:400px){
+  .metrics-grid{grid-template-columns:1fr}
+}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.empty-state-icon{font-size:2.5rem;margin-bottom:10px}
+.empty-state p{font-size:0.85rem}
+
+/* CHIP GROUP */
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:9999px;font-size:0.72rem;font-weight:500;background:var(--primary-light);color:var(--primary)}
+.chip-remove{cursor:pointer;opacity:0.6}
+.chip-remove:hover{opacity:1}
+
+/* STAND GRID */
+.stand-type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.stand-type-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stand-type-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.stand-type-name{font-weight:600}
+.stand-type-price{font-size:1rem;font-weight:700;color:var(--primary)}
+.stand-type-meta{font-size:0.75rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+
+/* ALLOCATION PANEL */
+.allocation-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:14px}
+.allocation-panel h3{margin-bottom:10px}
+
+/* CHECKLIST */
+.checklist{list-style:none}
+.checklist li{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.82rem;border-bottom:1px solid var(--border)}
+.checklist li:last-child{border-bottom:none}
+.checklist input[type=checkbox]{width:auto;flex-shrink:0}
+
+/* included items */
+.included-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.included-tag{background:#F3F4F6;color:#374151;padding:2px 7px;border-radius:9999px;font-size:0.68rem}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div id="header-logo">EM</div>
+    <div>
+      <div id="header-title">Exhibitor Manager</div>
+      <div id="header-event"></div>
+    </div>
+    <div id="header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="loadSampleData()"><span>📦</span><span>Sample Data</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="resetAllData()"><span>🗑</span><span>Reset</span></button>
+    </div>
+  </div><!-- /header -->
+
+  <div id="tabs">
+    <button class="tab-btn active" onclick="showTab('dashboard')" id="tab-dashboard">📊 Dashboard</button>
+    <button class="tab-btn" onclick="showTab('exhibitors')" id="tab-exhibitors">🏢 Exhibitors</button>
+    <button class="tab-btn" onclick="showTab('stands')" id="tab-stands">🟦 Stand Types</button>
+    <button class="tab-btn" onclick="showTab('floorplan')" id="tab-floorplan">🗺 Floor Plan</button>
+    <button class="tab-btn" onclick="showTab('logistics')" id="tab-logistics">🚚 Logistics</button>
+    <button class="tab-btn" onclick="showTab('requirements')" id="tab-requirements">🔌 Requirements</button>
+    <button class="tab-btn" onclick="showTab('manual')" id="tab-manual">📄 Manual</button>
+    <button class="tab-btn" onclick="showTab('export')" id="tab-export">⬇ Export</button>
+  </div>
+
+  <div id="content">
+
+    <!-- DASHBOARD TAB -->
+    <div id="pane-dashboard" class="tab-pane">
+      <div class="metrics-grid" id="dashboard-metrics"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="dashboard-lower">
+        <div class="card">
+          <div class="card-header"><span class="section-title">Exhibitors by Status</span></div>
+          <div id="dashboard-status-breakdown"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="section-title">Revenue vs Target</span></div>
+          <div id="dashboard-revenue"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-header"><span class="section-title">Top Exhibitors by Stand Size</span></div>
+        <div id="dashboard-top-exhibitors"></div>
+      </div>
+    </div>
+
+    <!-- EXHIBITORS TAB -->
+    <div id="pane-exhibitors" class="tab-pane" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <span class="section-title">Exhibitors</span>
+          <button class="btn btn-primary btn-sm" onclick="openExhibitorModal()">+ Add Exhibitor</button>
+        </div>
+        <div class="sub-tabs">
+          <button class="sub-tab active" onclick="setExhibitorView('cards')" id="ev-cards-tab">Cards</button>
+          <button class="sub-tab" onclick="setExhibitorView('list')" id="ev-list-tab">List</button>
+        </div>
+        <div class="search-bar">
+          <input class="search-input" type="text" placeholder="Search exhibitors…" id="exhibitor-search" oninput="renderExhibitors()">
+          <select id="exhibitor-filter-status" onchange="renderExhibitors()">
+            <option value="">All Statuses</option>
+            <option value="enquiry">Enquiry</option>
+            <option value="booked">Booked</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <select id="exhibitor-filter-type" onchange="renderExhibitors()">
+            <option value="">All Stand Types</option>
+          </select>
+        </div>
+        <div id="exhibitor-list-area"></div>
+      </div>
+    </div>
+
+    <!-- STANDS TAB -->
+    <div id="pane-stands" class="tab-pane" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <span class="section-title">Stand / Booth Types</span>
+          <button class="btn btn-primary btn-sm" onclick="openStandTypeModal()">+ Add Stand Type</button>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">Define the stand types available for exhibitors. Each type tracks its own inventory, pricing, and included items.</p>
+        <div class="stand-type-grid" id="stand-type-grid"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="card-header">
+          <span class="section-title">Individual Stands / Booths</span>
+          <button class="btn btn-primary btn-sm" onclick="openStandModal()">+ Add Stand</button>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">Add individual stand positions. Each stand has a number, position on the floor plan (x, y coords in metres), and is assigned a type.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Stand #</th><th>Type</th><th>Size (m²)</th><th>Position (x,y)</th><th>Status</th><th>Exhibitor</th><th>Price</th><th>Actions</th></tr></thead>
+            <tbody id="stands-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOOR PLAN TAB -->
+    <div id="pane-floorplan" class="tab-pane" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <span class="section-title">Exhibition Floor Plan</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="fpZoom(-0.2)">🔍−</button>
+            <button class="btn btn-secondary btn-sm" onclick="fpZoom(0.2)">🔍+</button>
+            <button class="btn btn-secondary btn-sm" onclick="fpZoomReset()">Reset</button>
+          </div>
+        </div>
+        <div class="alert alert-info" style="font-size:0.78rem">
+          <strong>Hall:</strong> <span id="fp-hall-dims"></span> — Click a stand to view or assign an exhibitor. Add stands in the <strong>Stand Types</strong> tab with x,y coordinates.
+        </div>
+        <div id="floor-plan-container">
+          <svg id="floor-plan-svg"></svg>
+          <div id="fp-tooltip"></div>
+        </div>
+        <div class="fp-legend">
+          <div class="fp-legend-item"><div class="fp-legend-dot" style="background:#9CA3AF"></div>Available</div>
+          <div class="fp-legend-item"><div class="fp-legend-dot" style="background:#3B82F6"></div>Held</div>
+          <div class="fp-legend-item"><div class="fp-legend-dot" style="background:#F59E0B"></div>Allocated</div>
+          <div class="fp-legend-item"><div class="fp-legend-dot" style="background:#10B981"></div>Confirmed</div>
+          <div class="fp-legend-item"><div class="fp-legend-dot" style="background:#EF4444"></div>Cancelled / N/A</div>
+          <div class="fp-legend-item"><div class="fp-legend-dot" style="background:#E5E7EB;border:1px solid #ccc"></div>Aisle / Zone</div>
+        </div>
+      </div>
+      <div class="allocation-panel" id="fp-selection-panel" style="display:none">
+        <h3 id="fp-sel-title">Stand Selected</h3>
+        <div id="fp-sel-content"></div>
+      </div>
+    </div>
+
+    <!-- LOGISTICS TAB -->
+    <div id="pane-logistics" class="tab-pane" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <span class="section-title">Logistics Scheduler</span>
+          <button class="btn btn-primary btn-sm" onclick="openLogisticsModal()">+ Add Slot</button>
+        </div>
+        <div class="sub-tabs">
+          <button class="sub-tab active" onclick="setLogisticsView('buildup')" id="lv-buildup-tab">🏗 Build-Up</button>
+          <button class="sub-tab" onclick="setLogisticsView('breakdown')" id="lv-breakdown-tab">🔧 Break-Down</button>
+          <button class="sub-tab" onclick="setLogisticsView('list')" id="lv-list-tab">📋 All Slots</button>
+        </div>
+        <div id="logistics-content"></div>
+      </div>
+    </div>
+
+    <!-- REQUIREMENTS TAB -->
+    <div id="pane-requirements" class="tab-pane" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <span class="section-title">Requirements Summary</span>
+        </div>
+        <div class="req-summary-grid" id="req-summary"></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-header">
+          <span class="section-title">Per-Exhibitor Requirements</span>
+        </div>
+        <div class="search-bar">
+          <input class="search-input" type="text" placeholder="Search exhibitors…" id="req-search" oninput="renderRequirements()">
+        </div>
+        <div id="req-table-area"></div>
+      </div>
+    </div>
+
+    <!-- MANUAL TAB -->
+    <div id="pane-manual" class="tab-pane" style="display:none">
+      <div class="card no-print">
+        <div class="card-header">
+          <span class="section-title">Exhibitor Manual Generator</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">Select an exhibitor to generate their personalised manual. The manual includes event details, stand information, logistics times, requirements ordered, and venue rules.</p>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="form-group">
+            <label>Select Exhibitor</label>
+            <select id="manual-exhibitor-select" onchange="previewManual()">
+              <option value="">— choose exhibitor —</option>
+            </select>
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary" onclick="printManual()" id="manual-print-btn" disabled>🖨 Print / Save PDF</button>
+          </div>
+        </div>
+        <div id="manual-preview" style="border:1px solid var(--border);border-radius:var(--radius);padding:20px;background:#fff;min-height:200px"></div>
+      </div>
+      <div id="manual-print-area"></div>
+    </div>
+
+    <!-- EXPORT TAB -->
+    <div id="pane-export" class="tab-pane" style="display:none">
+      <div class="card">
+        <div class="card-header"><span class="section-title">Export & Bridges</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+          <div class="card" style="border-color:var(--primary-light)">
+            <h3 style="margin-bottom:6px">📋 Exhibitor CSV</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Export all exhibitor records with contact details, stand assignment, contract value, and status.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportExhibitorCSV()">Download CSV</button>
+          </div>
+          <div class="card" style="border-color:var(--primary-light)">
+            <h3 style="margin-bottom:6px">🗺 Floor Plan Print</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Print the full floor plan showing all stands with status colour coding and exhibitor names.</p>
+            <button class="btn btn-primary btn-sm" onclick="printFloorPlan()">Print Floor Plan</button>
+          </div>
+          <div class="card" style="border-color:var(--primary-light)">
+            <h3 style="margin-bottom:6px">💰 Budget Tracker Bridge</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Export exhibition revenue as income line items to the Budget Tracker localStorage key.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportToBudget()">Export to Budget Tracker</button>
+          </div>
+          <div class="card" style="border-color:var(--primary-light)">
+            <h3 style="margin-bottom:6px">📑 Requirements Report</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Export all exhibitor requirements (power, internet, furniture, AV) as a CSV for venue/supplier submission.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportRequirementsCSV()">Download Requirements CSV</button>
+          </div>
+          <div class="card" style="border-color:var(--primary-light)">
+            <h3 style="margin-bottom:6px">📥 Full Data Export</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Export all exhibitor manager data as JSON for backup or transfer.</p>
+            <button class="btn btn-primary btn-sm" onclick="exportFullJSON()">Download JSON</button>
+          </div>
+          <div class="card" style="border-color:var(--primary-light)">
+            <h3 style="margin-bottom:6px">📤 Import JSON</h3>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Restore or merge data from a previously exported JSON file.</p>
+            <input type="file" accept=".json" id="import-json-input" onchange="importJSON(event)" style="display:none">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-json-input').click()">Choose File…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- EXHIBITOR MODAL -->
+<div class="modal-overlay" id="exhibitor-modal" style="display:none" onclick="handleOverlayClick(event,'exhibitor-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="exhibitor-modal-title">Add Exhibitor</h2>
+      <button class="modal-close" onclick="closeModal('exhibitor-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="em-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Company Name *</label>
+          <input type="text" id="em-company" placeholder="Acme Technologies Ltd">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="em-status">
+            <option value="enquiry">Enquiry</option>
+            <option value="booked">Booked</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contact Name</label>
+          <input type="text" id="em-contact-name" placeholder="Jane Smith">
+        </div>
+        <div class="form-group">
+          <label>Contact Role</label>
+          <input type="text" id="em-contact-role" placeholder="Marketing Director">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="em-email" placeholder="jane@acme.com">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="em-phone" placeholder="+44 7700 900000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Preferred Stand Type</label>
+          <select id="em-stand-type-pref">
+            <option value="">— none —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contract Value (<span id="em-currency-sym">£</span>)</label>
+          <input type="number" id="em-contract-value" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Website</label>
+          <input type="url" id="em-website" placeholder="https://acme.com">
+        </div>
+        <div class="form-group">
+          <label>Industry / Sector</label>
+          <input type="text" id="em-sector" placeholder="Technology">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description / Product</label>
+        <textarea id="em-description" placeholder="Brief description of the company or what they are exhibiting…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="em-notes" placeholder="Internal notes — stand preferences, special requests, key contacts…" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('exhibitor-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExhibitor()">Save Exhibitor</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAND TYPE MODAL -->
+<div class="modal-overlay" id="stand-type-modal" style="display:none" onclick="handleOverlayClick(event,'stand-type-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="st-modal-title">Add Stand Type</h2>
+      <button class="modal-close" onclick="closeModal('stand-type-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="st-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Stand Type Name *</label>
+          <input type="text" id="st-name" placeholder="Shell Scheme">
+        </div>
+        <div class="form-group">
+          <label>Typical Size (m²)</label>
+          <input type="number" id="st-sqm" placeholder="9" min="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Base Price (<span id="st-currency-sym">£</span>)</label>
+          <input type="number" id="st-price" placeholder="2500" min="0">
+        </div>
+        <div class="form-group">
+          <label>Total Quantity Available</label>
+          <input type="number" id="st-quantity" placeholder="50" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="st-description" placeholder="Pre-built shell with walls, carpet, fascia…">
+      </div>
+      <div class="form-group">
+        <label>Included Items (comma-separated)</label>
+        <input type="text" id="st-included" placeholder="Walls, Carpet, Fascia, 2x Spotlights, 1x 13A socket">
+        <div class="form-hint">e.g. Walls, Carpet, Fascia, Lighting, Power socket</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('stand-type-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStandType()">Save Stand Type</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAND (POSITION) MODAL -->
+<div class="modal-overlay" id="stand-modal" style="display:none" onclick="handleOverlayClick(event,'stand-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="stand-modal-title">Add Stand</h2>
+      <button class="modal-close" onclick="closeModal('stand-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="s-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Stand Number *</label>
+          <input type="text" id="s-number" placeholder="A01">
+        </div>
+        <div class="form-group">
+          <label>Stand Type *</label>
+          <select id="s-type-id">
+            <option value="">— select type —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Width (metres)</label>
+          <input type="number" id="s-width" placeholder="3" min="1" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Depth (metres)</label>
+          <input type="number" id="s-depth" placeholder="3" min="1" step="0.5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>X Position (metres from left)</label>
+          <input type="number" id="s-x" placeholder="0" min="0" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Y Position (metres from top)</label>
+          <input type="number" id="s-y" placeholder="0" min="0" step="0.5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="s-status">
+            <option value="available">Available</option>
+            <option value="held">Held</option>
+            <option value="allocated">Allocated</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="unavailable">Unavailable</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Override Price (<span id="s-currency-sym">£</span>, leave 0 for type default)</label>
+          <input type="number" id="s-price-override" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="s-notes" placeholder="Corner position, near catering, good footfall…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('stand-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStand()">Save Stand</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALLOCATE MODAL -->
+<div class="modal-overlay" id="allocate-modal" style="display:none" onclick="handleOverlayClick(event,'allocate-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="allocate-modal-title">Assign Exhibitor</h2>
+      <button class="modal-close" onclick="closeModal('allocate-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="al-stand-id">
+      <div id="al-stand-info" style="margin-bottom:14px"></div>
+      <div class="form-group">
+        <label>Assign to Exhibitor</label>
+        <select id="al-exhibitor-id">
+          <option value="">— unassign / leave available —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Allocation Status</label>
+        <select id="al-status">
+          <option value="available">Available</option>
+          <option value="held">Held</option>
+          <option value="allocated">Allocated</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('allocate-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAllocation()">Save Allocation</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGISTICS MODAL -->
+<div class="modal-overlay" id="logistics-modal" style="display:none" onclick="handleOverlayClick(event,'logistics-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="logistics-modal-title">Add Logistics Slot</h2>
+      <button class="modal-close" onclick="closeModal('logistics-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lg-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Exhibitor *</label>
+          <select id="lg-exhibitor-id">
+            <option value="">— select —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="lg-type">
+            <option value="buildup">Build-Up</option>
+            <option value="breakdown">Break-Down</option>
+            <option value="delivery">Delivery</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="lg-date">
+        </div>
+        <div class="form-group">
+          <label>Time Slot</label>
+          <select id="lg-timeslot">
+            <option value="07:00">07:00–09:00</option>
+            <option value="09:00">09:00–11:00</option>
+            <option value="11:00">11:00–13:00</option>
+            <option value="13:00">13:00–15:00</option>
+            <option value="15:00">15:00–17:00</option>
+            <option value="17:00">17:00–19:00</option>
+            <option value="19:00">19:00–21:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vehicle Type</label>
+          <select id="lg-vehicle">
+            <option value="">None / On foot</option>
+            <option value="car">Car / Estate</option>
+            <option value="van_small">Small Van</option>
+            <option value="van_large">Large Van / LWB</option>
+            <option value="truck_7.5t">7.5t Truck</option>
+            <option value="truck_artic">Articulated Truck</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Parking Pass Required?</label>
+          <select id="lg-parking">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+            <option value="issued">Yes — Issued</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="lg-notes" placeholder="Special requirements, oversized items, team size…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('logistics-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLogisticsSlot()">Save Slot</button>
+    </div>
+  </div>
+</div>
+
+<!-- REQUIREMENTS MODAL (per exhibitor) -->
+<div class="modal-overlay" id="req-modal" style="display:none" onclick="handleOverlayClick(event,'req-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="req-modal-title">Edit Requirements</h2>
+      <button class="modal-close" onclick="closeModal('req-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rq-exhibitor-id">
+      <h3 style="margin-bottom:12px">⚡ Power</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Total Amperage</label>
+          <input type="number" id="rq-power-amps" placeholder="13" min="0">
+        </div>
+        <div class="form-group">
+          <label>Number of Sockets</label>
+          <input type="number" id="rq-power-sockets" placeholder="2" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Power Notes</label>
+        <input type="text" id="rq-power-notes" placeholder="3-phase required, overnight supply needed…">
+      </div>
+      <div class="divider"></div>
+      <h3 style="margin-bottom:12px">🌐 Internet</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Connection Type</label>
+          <select id="rq-internet-type">
+            <option value="">None</option>
+            <option value="wifi">WiFi</option>
+            <option value="wired">Wired (Ethernet)</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Bandwidth Required (Mbps)</label>
+          <input type="number" id="rq-internet-mbps" placeholder="10" min="0">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <h3 style="margin-bottom:12px">🪑 Furniture</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tables</label>
+          <input type="number" id="rq-tables" placeholder="1" min="0">
+        </div>
+        <div class="form-group">
+          <label>Chairs</label>
+          <input type="number" id="rq-chairs" placeholder="2" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Other Furniture Notes</label>
+        <input type="text" id="rq-furniture-notes" placeholder="Shelving units, bar stools, display counters…">
+      </div>
+      <div class="divider"></div>
+      <h3 style="margin-bottom:12px">📺 AV & Other</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Screens / Monitors</label>
+          <input type="number" id="rq-screens" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Microphones / PA</label>
+          <select id="rq-pa">
+            <option value="">None</option>
+            <option value="handheld">Handheld Mic</option>
+            <option value="lapel">Lapel Mic</option>
+            <option value="pa_system">PA System</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Catering / Hospitality Notes</label>
+        <input type="text" id="rq-catering" placeholder="Refreshments, hospitality area, branded coffee…">
+      </div>
+      <div class="form-group">
+        <label>Additional Services / Notes</label>
+        <textarea id="rq-other" placeholder="Any other requirements…" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('req-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRequirements()">Save Requirements</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// CONFIG & STATE
+// =============================================
+let CFG = {
+  companyName: 'My Event',
+  primaryColor: '#7C3AED',
+  eventName: 'My Event',
+  eventDate: '',
+  eventSlug: 'my-event',
+  hallWidth: 40,
+  hallDepth: 50,
+  currency: 'GBP',
+  currencySymbol: '£',
+  currencyLocale: 'en-GB',
+  revenueTarget: 100000,
+  buildUpDate: '',
+  breakDownDate: '',
+  defaultStandTypes: ['Shell Scheme', 'Space Only', 'Island', 'Peninsula', 'Custom']
+};
+
+// Apply EVENTHIVE_CONFIG if present
+if (typeof EVENTHIVE_CONFIG !== 'undefined') {
+  Object.assign(CFG, EVENTHIVE_CONFIG);
+}
+
+const STORAGE_KEY = () => `eventhive_event_${CFG.eventSlug}_exhibitors`;
+
+let STATE = {
+  exhibitors: [],
+  standTypes: [],
+  stands: [],
+  logisticsSlots: [],
+  requirements: {} // keyed by exhibitorId
+};
+
+let fpScale = 1;
+let exhibitorView = 'cards';
+let logisticsView = 'buildup';
+let editingExhibitorId = null;
+let editingStandTypeId = null;
+let editingStandId = null;
+let editingLogisticsId = null;
+
+// =============================================
+// PERSISTENCE
+// =============================================
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY(), JSON.stringify(STATE)); } catch(e) { console.warn('Save failed', e); }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY());
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      STATE.exhibitors = parsed.exhibitors || [];
+      STATE.standTypes = parsed.standTypes || [];
+      STATE.stands = parsed.stands || [];
+      STATE.logisticsSlots = parsed.logisticsSlots || [];
+      STATE.requirements = parsed.requirements || {};
+    }
+  } catch(e) { console.warn('Load failed', e); }
+}
+function resetAllData() {
+  if (!confirm('Reset all data? This cannot be undone.')) return;
+  STATE = { exhibitors:[], standTypes:[], stands:[], logisticsSlots:[], requirements:{} };
+  saveState();
+  renderAll();
+  toast('Data reset');
+}
+
+// =============================================
+// INIT
+// =============================================
+document.addEventListener('DOMContentLoaded', () => {
+  applyBranding();
+  loadState();
+  if (STATE.exhibitors.length === 0 && STATE.standTypes.length === 0) {
+    seedDefaultStandTypes();
+  }
+  renderAll();
+  updateHeaderEvent();
+});
+
+function applyBranding() {
+  document.documentElement.style.setProperty('--primary', CFG.primaryColor);
+  // Derive dark/light variants
+  document.documentElement.style.setProperty('--primary-dark', darken(CFG.primaryColor, 20));
+  document.documentElement.style.setProperty('--primary-light', lighten(CFG.primaryColor, 40));
+  document.querySelector('#header-title').textContent = 'Exhibitor Manager';
+}
+function updateHeaderEvent() {
+  const el = document.getElementById('header-event');
+  el.textContent = CFG.eventName + (CFG.eventDate ? ' · ' + CFG.eventDate : '');
+}
+function seedDefaultStandTypes() {
+  const defaults = [
+    { name:'Shell Scheme', sqm:9, price:2500, qty:60, desc:'Pre-built walls, carpet, fascia, lighting included', included:'Walls,Carpet,Fascia,2× Spotlights,1× 13A Socket' },
+    { name:'Space Only', sqm:9, price:1800, qty:80, desc:'Raw space — exhibitor provides their own stand', included:'None — raw floor space only' },
+    { name:'Island', sqm:36, price:8500, qty:12, desc:'Open on all 4 sides, premium central position', included:'Corner Posts,Flooring,3-Phase Power,WiFi' },
+    { name:'Peninsula', sqm:18, price:4200, qty:16, desc:'Open on 3 sides — semi-premium', included:'Back Wall,Carpet,2× Power Sockets,Spotlights' },
+    { name:'Custom', sqm:0, price:0, qty:10, desc:'Bespoke custom-build specification', included:'Per specification' }
+  ];
+  defaults.forEach(d => {
+    STATE.standTypes.push({ id: uid(), name: d.name, sqm: d.sqm, price: d.price, qty: d.qty, description: d.desc, included: d.included });
+  });
+  saveState();
+}
+
+function renderAll() {
+  renderDashboard();
+  renderExhibitors();
+  renderStandTypes();
+  renderStandsTable();
+  renderFloorPlan();
+  renderLogistics();
+  renderRequirements();
+  populateSelects();
+}
+
+// =============================================
+// TABS
+// =============================================
+function showTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pane-' + name).style.display = '';
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'floorplan') renderFloorPlan();
+  if (name === 'manual') populateManualSelect();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'logistics') renderLogistics();
+  if (name === 'requirements') renderRequirements();
+}
+
+// =============================================
+// DASHBOARD
+// =============================================
+function renderDashboard() {
+  const totalStands = STATE.stands.length;
+  const confirmedStands = STATE.stands.filter(s => s.status === 'confirmed').length;
+  const allocatedStands = STATE.stands.filter(s => s.status === 'allocated' || s.status === 'confirmed').length;
+  const occupancy = totalStands ? Math.round(allocatedStands / totalStands * 100) : 0;
+
+  const totalExhibitors = STATE.exhibitors.length;
+  const confirmedExhibitors = STATE.exhibitors.filter(e => e.status === 'confirmed').length;
+  const bookedExhibitors = STATE.exhibitors.filter(e => e.status === 'booked').length;
+
+  const totalRevenue = STATE.stands
+    .filter(s => s.exhibitorId && (s.status === 'confirmed' || s.status === 'allocated'))
+    .reduce((sum, s) => {
+      const ex = STATE.exhibitors.find(e => e.id === s.exhibitorId);
+      return sum + (ex ? Number(ex.contractValue || 0) : 0);
+    }, 0);
+  // Deduplicate: revenue by unique exhibitor
+  const contractedRevenue = [...new Set(
+    STATE.exhibitors
+      .filter(e => e.status === 'confirmed' || e.status === 'booked')
+      .map(e => e.id)
+  )].reduce((sum, id) => {
+    const e = STATE.exhibitors.find(x => x.id === id);
+    return sum + Number(e?.contractValue || 0);
+  }, 0);
+
+  const revenueTarget = Number(CFG.revenueTarget) || 100000;
+  const revenueProgress = revenueTarget ? Math.min(100, Math.round(contractedRevenue / revenueTarget * 100)) : 0;
+
+  const sym = CFG.currencySymbol || '£';
+
+  document.getElementById('dashboard-metrics').innerHTML = `
+    <div class="metric">
+      <div class="metric-value">${totalExhibitors}</div>
+      <div class="metric-label">Total Exhibitors</div>
+      <div class="metric-sub">${confirmedExhibitors} confirmed</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">${totalStands}</div>
+      <div class="metric-label">Total Stands</div>
+      <div class="metric-sub">${confirmedStands} confirmed</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">${occupancy}%</div>
+      <div class="metric-label">Occupancy Rate</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill ${occupancy>=80?'success':occupancy>=50?'warning':'danger'}" style="width:${occupancy}%"></div></div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">${sym}${fmtNum(contractedRevenue)}</div>
+      <div class="metric-label">Revenue Booked</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill ${revenueProgress>=80?'success':revenueProgress>=50?'warning':'danger'}" style="width:${revenueProgress}%"></div></div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">${sym}${fmtNum(revenueTarget)}</div>
+      <div class="metric-label">Revenue Target</div>
+      <div class="metric-sub">${revenueProgress}% achieved</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">${STATE.logisticsSlots.length}</div>
+      <div class="metric-label">Logistics Slots</div>
+      <div class="metric-sub">build-up & break-down</div>
+    </div>
+  `;
+
+  // Status breakdown
+  const statuses = ['enquiry','booked','confirmed','cancelled'];
+  const statusLabels = { enquiry:'Enquiry', booked:'Booked', confirmed:'Confirmed', cancelled:'Cancelled' };
+  const statusColors = { enquiry:'#9CA3AF', booked:'#3B82F6', confirmed:'#10B981', cancelled:'#EF4444' };
+  let sbHTML = '';
+  statuses.forEach(s => {
+    const count = STATE.exhibitors.filter(e => e.status === s).length;
+    const pct = totalExhibitors ? Math.round(count / totalExhibitors * 100) : 0;
+    sbHTML += `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:3px">
+        <span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${statusColors[s]}"></span>${statusLabels[s]}</span>
+        <span>${count} (${pct}%)</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%;background:${statusColors[s]}"></div></div>
+    </div>`;
+  });
+  document.getElementById('dashboard-status-breakdown').innerHTML = sbHTML || '<div class="empty-state"><p>No exhibitors yet</p></div>';
+
+  // Revenue card
+  document.getElementById('dashboard-revenue').innerHTML = `
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:2rem;font-weight:700;color:var(--primary)">${revenueProgress}%</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">of target achieved</div>
+      <div class="progress-bar-wrap" style="height:14px"><div class="progress-bar-fill ${revenueProgress>=80?'success':revenueProgress>=50?'warning':'danger'}" style="width:${revenueProgress}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);margin-top:6px">
+        <span>Booked: ${sym}${fmtNum(contractedRevenue)}</span>
+        <span>Target: ${sym}${fmtNum(revenueTarget)}</span>
+      </div>
+    </div>
+  `;
+
+  // Top exhibitors
+  const sorted = [...STATE.exhibitors]
+    .filter(e => e.contractValue > 0)
+    .sort((a,b) => Number(b.contractValue) - Number(a.contractValue))
+    .slice(0,5);
+  if (sorted.length) {
+    let html = '<div class="table-wrap"><table><thead><tr><th>Company</th><th>Status</th><th>Contract Value</th><th>Stand</th></tr></thead><tbody>';
+    sorted.forEach(e => {
+      const stand = STATE.stands.find(s => s.exhibitorId === e.id);
+      html += `<tr>
+        <td><strong>${esc(e.company)}</strong></td>
+        <td><span class="badge badge-${e.status}">${e.status}</span></td>
+        <td>${sym}${fmtNum(e.contractValue)}</td>
+        <td>${stand ? esc(stand.number) : '<span style="color:var(--text-light)">Unassigned</span>'}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('dashboard-top-exhibitors').innerHTML = html;
+  } else {
+    document.getElementById('dashboard-top-exhibitors').innerHTML = '<div class="empty-state"><p>No exhibitor data yet</p></div>';
+  }
+}
+
+// =============================================
+// EXHIBITORS
+// =============================================
+function setExhibitorView(v) {
+  exhibitorView = v;
+  document.getElementById('ev-cards-tab').classList.toggle('active', v==='cards');
+  document.getElementById('ev-list-tab').classList.toggle('active', v==='list');
+  renderExhibitors();
+}
+
+function renderExhibitors() {
+  const search = (document.getElementById('exhibitor-search')?.value || '').toLowerCase();
+  const filterStatus = document.getElementById('exhibitor-filter-status')?.value || '';
+  const filterType = document.getElementById('exhibitor-filter-type')?.value || '';
+
+  let list = STATE.exhibitors.filter(e => {
+    const matchSearch = !search ||
+      e.company.toLowerCase().includes(search) ||
+      (e.contactName || '').toLowerCase().includes(search) ||
+      (e.sector || '').toLowerCase().includes(search);
+    const matchStatus = !filterStatus || e.status === filterStatus;
+    const matchType = !filterType || e.standTypePref === filterType;
+    return matchSearch && matchStatus && matchType;
+  });
+
+  const area = document.getElementById('exhibitor-list-area');
+  if (!list.length) {
+    area.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏢</div><p>No exhibitors found. Add your first exhibitor or load sample data.</p></div>';
+    return;
+  }
+
+  if (exhibitorView === 'cards') {
+    area.innerHTML = `<div class="exhibitor-grid">${list.map(e => exhibitorCard(e)).join('')}</div>`;
+  } else {
+    const sym = CFG.currencySymbol || '£';
+    let html = '<div class="table-wrap"><table><thead><tr><th>Company</th><th>Contact</th><th>Status</th><th>Stand Type</th><th>Contract Value</th><th>Stand #</th><th>Actions</th></tr></thead><tbody>';
+    list.forEach(e => {
+      const stand = STATE.stands.find(s => s.exhibitorId === e.id);
+      const stType = STATE.standTypes.find(t => t.id === e.standTypePref);
+      html += `<tr>
+        <td><strong>${esc(e.company)}</strong><br><small style="color:var(--text-muted)">${esc(e.sector||'')}</small></td>
+        <td>${esc(e.contactName||'')}<br><small style="color:var(--text-muted)">${esc(e.email||'')}</small></td>
+        <td><span class="badge badge-${e.status}">${e.status}</span></td>
+        <td>${stType ? esc(stType.name) : '—'}</td>
+        <td>${sym}${fmtNum(e.contractValue||0)}</td>
+        <td>${stand ? esc(stand.number) : '—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn-icon" title="Edit" onclick="openExhibitorModal('${e.id}')">✏️</button>
+          <button class="btn-icon" title="Requirements" onclick="openReqModal('${e.id}')">🔌</button>
+          <button class="btn-icon" title="Delete" onclick="deleteExhibitor('${e.id}')">🗑</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    area.innerHTML = html;
+  }
+}
+
+function exhibitorCard(e) {
+  const initials = e.company.split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
+  const stand = STATE.stands.find(s => s.exhibitorId === e.id);
+  const stType = STATE.standTypes.find(t => t.id === e.standTypePref);
+  const sym = CFG.currencySymbol || '£';
+  return `<div class="exhibitor-card" onclick="openExhibitorModal('${e.id}')">
+    <div class="exhibitor-card-header">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div class="exhibitor-initials">${initials||'?'}</div>
+        <div>
+          <div class="exhibitor-name">${esc(e.company)}</div>
+          <div class="exhibitor-contact">${esc(e.contactName||'')}${e.contactRole?' · '+esc(e.contactRole):''}</div>
+        </div>
+      </div>
+      <span class="badge badge-${e.status}">${e.status}</span>
+    </div>
+    <div style="font-size:0.75rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+      ${stType ? `<span>📐 ${esc(stType.name)}</span>` : ''}
+      ${stand ? `<span>🟦 Stand ${esc(stand.number)}</span>` : ''}
+      ${e.contractValue > 0 ? `<span>💰 ${sym}${fmtNum(e.contractValue)}</span>` : ''}
+      ${e.sector ? `<span>🏭 ${esc(e.sector)}</span>` : ''}
+    </div>
+    ${e.notes ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);line-height:1.3">${esc(e.notes)}</div>` : ''}
+    <div style="margin-top:8px;display:flex;gap:6px" onclick="event.stopPropagation()">
+      <button class="btn btn-secondary btn-sm" onclick="openExhibitorModal('${e.id}')">Edit</button>
+      <button class="btn btn-secondary btn-sm" onclick="openReqModal('${e.id}')">🔌 Req</button>
+      <button class="btn btn-secondary btn-sm" onclick="deleteExhibitor('${e.id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function openExhibitorModal(id) {
+  editingExhibitorId = id || null;
+  const modal = document.getElementById('exhibitor-modal');
+  const sym = CFG.currencySymbol || '£';
+  document.getElementById('em-currency-sym').textContent = sym;
+  // populate stand type dropdown
+  const stSel = document.getElementById('em-stand-type-pref');
+  stSel.innerHTML = '<option value="">— none —</option>' +
+    STATE.standTypes.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+
+  if (id) {
+    const e = STATE.exhibitors.find(x => x.id === id);
+    if (!e) return;
+    document.getElementById('exhibitor-modal-title').textContent = 'Edit Exhibitor';
+    document.getElementById('em-id').value = e.id;
+    document.getElementById('em-company').value = e.company;
+    document.getElementById('em-status').value = e.status;
+    document.getElementById('em-contact-name').value = e.contactName || '';
+    document.getElementById('em-contact-role').value = e.contactRole || '';
+    document.getElementById('em-email').value = e.email || '';
+    document.getElementById('em-phone').value = e.phone || '';
+    stSel.value = e.standTypePref || '';
+    document.getElementById('em-contract-value').value = e.contractValue || '';
+    document.getElementById('em-website').value = e.website || '';
+    document.getElementById('em-sector').value = e.sector || '';
+    document.getElementById('em-description').value = e.description || '';
+    document.getElementById('em-notes').value = e.notes || '';
+  } else {
+    document.getElementById('exhibitor-modal-title').textContent = 'Add Exhibitor';
+    document.getElementById('em-id').value = '';
+    ['em-company','em-contact-name','em-contact-role','em-email','em-phone','em-contract-value','em-website','em-sector','em-description','em-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('em-status').value = 'enquiry';
+    stSel.value = '';
+  }
+  modal.style.display = 'flex';
+}
+
+function saveExhibitor() {
+  const company = document.getElementById('em-company').value.trim();
+  if (!company) { toast('Company name is required', 'error'); return; }
+  const data = {
+    company,
+    status: document.getElementById('em-status').value,
+    contactName: document.getElementById('em-contact-name').value.trim(),
+    contactRole: document.getElementById('em-contact-role').value.trim(),
+    email: document.getElementById('em-email').value.trim(),
+    phone: document.getElementById('em-phone').value.trim(),
+    standTypePref: document.getElementById('em-stand-type-pref').value,
+    contractValue: Number(document.getElementById('em-contract-value').value) || 0,
+    website: document.getElementById('em-website').value.trim(),
+    sector: document.getElementById('em-sector').value.trim(),
+    description: document.getElementById('em-description').value.trim(),
+    notes: document.getElementById('em-notes').value.trim()
+  };
+  const id = document.getElementById('em-id').value;
+  if (id) {
+    const idx = STATE.exhibitors.findIndex(e => e.id === id);
+    if (idx >= 0) STATE.exhibitors[idx] = { ...STATE.exhibitors[idx], ...data };
+  } else {
+    STATE.exhibitors.push({ id: uid(), createdAt: new Date().toISOString(), ...data });
+  }
+  saveState();
+  closeModal('exhibitor-modal');
+  renderExhibitors();
+  renderDashboard();
+  populateSelects();
+  toast(id ? 'Exhibitor updated' : 'Exhibitor added');
+}
+
+function deleteExhibitor(id) {
+  if (!confirm('Delete this exhibitor?')) return;
+  STATE.exhibitors = STATE.exhibitors.filter(e => e.id !== id);
+  // Unassign from stands
+  STATE.stands.forEach(s => { if (s.exhibitorId === id) { s.exhibitorId = null; s.status = 'available'; } });
+  delete STATE.requirements[id];
+  saveState();
+  renderExhibitors();
+  renderDashboard();
+  renderStandsTable();
+  renderFloorPlan();
+  populateSelects();
+  toast('Exhibitor deleted');
+}
+
+// =============================================
+// STAND TYPES
+// =============================================
+function renderStandTypes() {
+  const grid = document.getElementById('stand-type-grid');
+  if (!STATE.standTypes.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟦</div><p>No stand types defined.</p></div>';
+    return;
+  }
+  const sym = CFG.currencySymbol || '£';
+  grid.innerHTML = STATE.standTypes.map(t => {
+    const allocated = STATE.stands.filter(s => s.typeId === t.id && (s.status === 'allocated' || s.status === 'confirmed')).length;
+    const total = STATE.stands.filter(s => s.typeId === t.id).length;
+    const includedItems = (t.included || '').split(',').map(x => x.trim()).filter(Boolean);
+    return `<div class="stand-type-card">
+      <div class="stand-type-header">
+        <div class="stand-type-name">${esc(t.name)}</div>
+        <div class="stand-type-price">${t.price > 0 ? sym + fmtNum(t.price) : 'POA'}</div>
+      </div>
+      ${t.description ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px">${esc(t.description)}</div>` : ''}
+      <div class="stand-type-meta">
+        ${t.sqm > 0 ? `<span>📐 ${t.sqm}m²</span>` : ''}
+        <span>📦 ${allocated}/${total > 0 ? total : t.qty || '?'} allocated</span>
+      </div>
+      ${includedItems.length ? `<div class="included-tags">${includedItems.map(i => `<span class="included-tag">${esc(i)}</span>`).join('')}</div>` : ''}
+      <div style="margin-top:10px;display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="openStandTypeModal('${t.id}')">Edit</button>
+        <button class="btn btn-secondary btn-sm" onclick="deleteStandType('${t.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openStandTypeModal(id) {
+  editingStandTypeId = id || null;
+  const sym = CFG.currencySymbol || '£';
+  document.getElementById('st-currency-sym').textContent = sym;
+  if (id) {
+    const t = STATE.standTypes.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('st-modal-title').textContent = 'Edit Stand Type';
+    document.getElementById('st-id').value = t.id;
+    document.getElementById('st-name').value = t.name;
+    document.getElementById('st-sqm').value = t.sqm || '';
+    document.getElementById('st-price').value = t.price || '';
+    document.getElementById('st-quantity').value = t.qty || '';
+    document.getElementById('st-description').value = t.description || '';
+    document.getElementById('st-included').value = t.included || '';
+  } else {
+    document.getElementById('st-modal-title').textContent = 'Add Stand Type';
+    document.getElementById('st-id').value = '';
+    ['st-name','st-sqm','st-price','st-quantity','st-description','st-included'].forEach(f => document.getElementById(f).value = '');
+  }
+  document.getElementById('stand-type-modal').style.display = 'flex';
+}
+
+function saveStandType() {
+  const name = document.getElementById('st-name').value.trim();
+  if (!name) { toast('Name is required', 'error'); return; }
+  const data = {
+    name,
+    sqm: Number(document.getElementById('st-sqm').value) || 0,
+    price: Number(document.getElementById('st-price').value) || 0,
+    qty: Number(document.getElementById('st-quantity').value) || 0,
+    description: document.getElementById('st-description').value.trim(),
+    included: document.getElementById('st-included').value.trim()
+  };
+  const id = document.getElementById('st-id').value;
+  if (id) {
+    const idx = STATE.standTypes.findIndex(t => t.id === id);
+    if (idx >= 0) STATE.standTypes[idx] = { ...STATE.standTypes[idx], ...data };
+  } else {
+    STATE.standTypes.push({ id: uid(), ...data });
+  }
+  saveState();
+  closeModal('stand-type-modal');
+  renderStandTypes();
+  populateSelects();
+  toast(id ? 'Stand type updated' : 'Stand type added');
+}
+
+function deleteStandType(id) {
+  if (STATE.stands.some(s => s.typeId === id)) {
+    toast('Cannot delete — stands are using this type', 'error'); return;
+  }
+  if (!confirm('Delete this stand type?')) return;
+  STATE.standTypes = STATE.standTypes.filter(t => t.id !== id);
+  saveState();
+  renderStandTypes();
+  populateSelects();
+  toast('Stand type deleted');
+}
+
+// =============================================
+// STANDS (positions)
+// =============================================
+function renderStandsTable() {
+  const sym = CFG.currencySymbol || '£';
+  const tbody = document.getElementById('stands-table-body');
+  if (!STATE.stands.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">No stands added yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = STATE.stands.map(s => {
+    const type = STATE.standTypes.find(t => t.id === s.typeId);
+    const exhibitor = s.exhibitorId ? STATE.exhibitors.find(e => e.id === s.exhibitorId) : null;
+    const sqm = (Number(s.width)||0) * (Number(s.depth)||0);
+    const price = Number(s.priceOverride) > 0 ? s.priceOverride : (type?.price || 0);
+    return `<tr>
+      <td><strong>${esc(s.number)}</strong></td>
+      <td>${type ? esc(type.name) : '—'}</td>
+      <td>${sqm > 0 ? sqm + 'm²' : (type?.sqm > 0 ? type.sqm + 'm²' : '—')}</td>
+      <td style="font-size:0.75rem;color:var(--text-muted)">(${s.x||0}, ${s.y||0})</td>
+      <td><span class="badge badge-${s.status||'available'}">${s.status||'available'}</span></td>
+      <td>${exhibitor ? esc(exhibitor.company) : '<span style="color:var(--text-light)">—</span>'}</td>
+      <td>${price > 0 ? sym + fmtNum(price) : '—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="Edit" onclick="openStandModal('${s.id}')">✏️</button>
+        <button class="btn-icon" title="Assign" onclick="openAllocateModal('${s.id}')">👤</button>
+        <button class="btn-icon" title="Delete" onclick="deleteStand('${s.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openStandModal(id) {
+  editingStandId = id || null;
+  const sym = CFG.currencySymbol || '£';
+  document.getElementById('s-currency-sym').textContent = sym;
+  const typeSel = document.getElementById('s-type-id');
+  typeSel.innerHTML = '<option value="">— select type —</option>' +
+    STATE.standTypes.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+
+  if (id) {
+    const s = STATE.stands.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('stand-modal-title').textContent = 'Edit Stand';
+    document.getElementById('s-id').value = s.id;
+    document.getElementById('s-number').value = s.number;
+    typeSel.value = s.typeId || '';
+    document.getElementById('s-width').value = s.width || '';
+    document.getElementById('s-depth').value = s.depth || '';
+    document.getElementById('s-x').value = s.x !== undefined ? s.x : '';
+    document.getElementById('s-y').value = s.y !== undefined ? s.y : '';
+    document.getElementById('s-status').value = s.status || 'available';
+    document.getElementById('s-price-override').value = s.priceOverride || 0;
+    document.getElementById('s-notes').value = s.notes || '';
+  } else {
+    document.getElementById('stand-modal-title').textContent = 'Add Stand';
+    document.getElementById('s-id').value = '';
+    ['s-number','s-width','s-depth','s-x','s-y','s-notes'].forEach(f => document.getElementById(f).value = '');
+    document.getElementById('s-status').value = 'available';
+    document.getElementById('s-price-override').value = 0;
+  }
+  document.getElementById('stand-modal').style.display = 'flex';
+}
+
+function saveStand() {
+  const number = document.getElementById('s-number').value.trim();
+  const typeId = document.getElementById('s-type-id').value;
+  if (!number) { toast('Stand number is required', 'error'); return; }
+  const id = document.getElementById('s-id').value;
+  // Check for duplicate number
+  const dup = STATE.stands.find(s => s.number === number && s.id !== id);
+  if (dup) { toast('Stand number already exists', 'error'); return; }
+  const data = {
+    number,
+    typeId,
+    width: Number(document.getElementById('s-width').value) || 3,
+    depth: Number(document.getElementById('s-depth').value) || 3,
+    x: Number(document.getElementById('s-x').value) || 0,
+    y: Number(document.getElementById('s-y').value) || 0,
+    status: document.getElementById('s-status').value,
+    priceOverride: Number(document.getElementById('s-price-override').value) || 0,
+    notes: document.getElementById('s-notes').value.trim()
+  };
+  if (id) {
+    const idx = STATE.stands.findIndex(s => s.id === id);
+    if (idx >= 0) STATE.stands[idx] = { ...STATE.stands[idx], ...data };
+  } else {
+    STATE.stands.push({ id: uid(), exhibitorId: null, ...data });
+  }
+  saveState();
+  closeModal('stand-modal');
+  renderStandsTable();
+  renderFloorPlan();
+  renderDashboard();
+  toast(id ? 'Stand updated' : 'Stand added');
+}
+
+function deleteStand(id) {
+  if (!confirm('Delete this stand?')) return;
+  STATE.stands = STATE.stands.filter(s => s.id !== id);
+  saveState();
+  renderStandsTable();
+  renderFloorPlan();
+  renderDashboard();
+  toast('Stand deleted');
+}
+
+// =============================================
+// FLOOR PLAN
+// =============================================
+const FP_SCALE = 10; // pixels per metre at zoom=1
+
+function getStandColor(s) {
+  if (s.status === 'confirmed') return '#10B981';
+  if (s.status === 'allocated') return '#F59E0B';
+  if (s.status === 'held') return '#3B82F6';
+  if (s.status === 'unavailable') return '#EF4444';
+  return '#9CA3AF';
+}
+
+function renderFloorPlan() {
+  const W = Number(CFG.hallWidth) || 40;
+  const H = Number(CFG.hallDepth) || 50;
+  const scale = FP_SCALE * fpScale;
+  const padding = 30;
+  const svgW = W * scale + padding * 2;
+  const svgH = H * scale + padding * 2;
+
+  document.getElementById('fp-hall-dims').textContent = `${W}m × ${H}m`;
+
+  let svg = `<svg id="floor-plan-svg" width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Hall border
+  svg += `<rect x="${padding}" y="${padding}" width="${W*scale}" height="${H*scale}" fill="#FFFFFF" stroke="#374151" stroke-width="2"/>`;
+
+  // Grid lines (every 5m)
+  for (let gx = 0; gx <= W; gx += 5) {
+    const px = padding + gx * scale;
+    svg += `<line x1="${px}" y1="${padding}" x2="${px}" y2="${padding + H*scale}" stroke="#E5E7EB" stroke-width="0.5"/>`;
+    if (gx > 0 && gx < W) svg += `<text x="${px}" y="${padding-6}" font-size="8" fill="#9CA3AF" text-anchor="middle">${gx}m</text>`;
+  }
+  for (let gy = 0; gy <= H; gy += 5) {
+    const py = padding + gy * scale;
+    svg += `<line x1="${padding}" y1="${py}" x2="${padding + W*scale}" y2="${py}" stroke="#E5E7EB" stroke-width="0.5"/>`;
+    if (gy > 0 && gy < H) svg += `<text x="${padding-4}" y="${py}" font-size="8" fill="#9CA3AF" text-anchor="end" dominant-baseline="middle">${gy}m</text>`;
+  }
+
+  // Stands
+  STATE.stands.forEach(s => {
+    const type = STATE.standTypes.find(t => t.id === s.typeId);
+    const ex = s.exhibitorId ? STATE.exhibitors.find(e => e.id === s.exhibitorId) : null;
+    const sx = padding + (Number(s.x)||0) * scale;
+    const sy = padding + (Number(s.y)||0) * scale;
+    const sw = (Number(s.width)||3) * scale;
+    const sh = (Number(s.depth)||3) * scale;
+    const color = getStandColor(s);
+    const cx = sx + sw/2;
+    const cy = sy + sh/2;
+    const sqm = (Number(s.width)||0) * (Number(s.depth)||0);
+    const exName = ex ? ex.company.split(' ')[0] : '';
+    const tooltip = `Stand ${s.number}|${type?.name||''}|${sqm>0?sqm+'m²':''}|${s.status}${ex?'|'+ex.company:''}${s.notes?'|'+s.notes:''}`;
+
+    svg += `<g class="fp-stand" onclick="selectFpStand('${s.id}')" data-tip="${esc(tooltip)}">
+      <rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="${color}" fill-opacity="0.75" stroke="${color}" stroke-width="1.5" rx="2"/>
+      <text class="fp-label" x="${cx}" y="${cy - (exName?5:0)}">${esc(s.number)}</text>
+      ${exName ? `<text class="fp-label" x="${cx}" y="${cy+7}" font-size="7">${esc(exName)}</text>` : ''}
+    </g>`;
+  });
+
+  // Scale bar
+  const barLen = 10 * scale; // 10m
+  const bx = padding + 5;
+  const by = padding + H*scale + 15;
+  svg += `<line x1="${bx}" y1="${by}" x2="${bx+barLen}" y2="${by}" stroke="#374151" stroke-width="2"/>
+    <line x1="${bx}" y1="${by-4}" x2="${bx}" y2="${by+4}" stroke="#374151" stroke-width="1.5"/>
+    <line x1="${bx+barLen}" y1="${by-4}" x2="${bx+barLen}" y2="${by+4}" stroke="#374151" stroke-width="1.5"/>
+    <text x="${bx + barLen/2}" y="${by+14}" font-size="9" fill="#374151" text-anchor="middle">10m</text>`;
+
+  svg += '</svg>';
+
+  const container = document.getElementById('floor-plan-container');
+  container.innerHTML = svg + '<div id="fp-tooltip"></div>';
+
+  // Tooltip events
+  container.querySelectorAll('.fp-stand').forEach(el => {
+    el.addEventListener('mouseenter', (ev) => {
+      const tip = container.querySelector('#fp-tooltip');
+      const parts = el.getAttribute('data-tip').split('|');
+      tip.innerHTML = parts.map((p,i) => i===0 ? `<strong>${p}</strong>` : p).filter(p=>p).join('<br>');
+      tip.style.display = 'block';
+    });
+    el.addEventListener('mousemove', (ev) => {
+      const tip = container.querySelector('#fp-tooltip');
+      const rect = container.getBoundingClientRect();
+      tip.style.left = (ev.clientX - rect.left + 12) + 'px';
+      tip.style.top = (ev.clientY - rect.top - 10) + 'px';
+    });
+    el.addEventListener('mouseleave', () => {
+      container.querySelector('#fp-tooltip').style.display = 'none';
+    });
+  });
+}
+
+function fpZoom(delta) {
+  fpScale = Math.max(0.4, Math.min(3, fpScale + delta));
+  renderFloorPlan();
+}
+function fpZoomReset() { fpScale = 1; renderFloorPlan(); }
+
+function selectFpStand(id) {
+  const s = STATE.stands.find(x => x.id === id);
+  if (!s) return;
+  const panel = document.getElementById('fp-selection-panel');
+  const type = STATE.standTypes.find(t => t.id === s.typeId);
+  const ex = s.exhibitorId ? STATE.exhibitors.find(e => e.id === s.exhibitorId) : null;
+  const sym = CFG.currencySymbol || '£';
+  const sqm = (Number(s.width)||0) * (Number(s.depth)||0);
+  const price = Number(s.priceOverride) > 0 ? s.priceOverride : (type?.price||0);
+
+  document.getElementById('fp-sel-title').textContent = `Stand ${s.number}`;
+  document.getElementById('fp-sel-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
+      <div><strong>Type:</strong> ${type ? esc(type.name) : '—'}</div>
+      <div><strong>Size:</strong> ${s.width||'?'}m × ${s.depth||'?'}m${sqm > 0 ? ' ('+sqm+'m²)' : ''}</div>
+      <div><strong>Status:</strong> <span class="badge badge-${s.status||'available'}">${s.status||'available'}</span></div>
+      <div><strong>Price:</strong> ${price > 0 ? sym + fmtNum(price) : 'POA'}</div>
+      <div><strong>Exhibitor:</strong> ${ex ? esc(ex.company) : '<em>Unassigned</em>'}</div>
+      <div><strong>Position:</strong> (${s.x||0}m, ${s.y||0}m)</div>
+    </div>
+    ${s.notes ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">${esc(s.notes)}</div>` : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="openAllocateModal('${s.id}')">👤 Assign Exhibitor</button>
+      <button class="btn btn-secondary btn-sm" onclick="openStandModal('${s.id}')">✏️ Edit Stand</button>
+      ${ex ? `<button class="btn btn-secondary btn-sm" onclick="openExhibitorModal('${ex.id}')">🏢 View Exhibitor</button>` : ''}
+    </div>
+  `;
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// =============================================
+// STAND ALLOCATION
+// =============================================
+function openAllocateModal(standId) {
+  const s = STATE.stands.find(x => x.id === standId);
+  if (!s) return;
+  const type = STATE.standTypes.find(t => t.id === s.typeId);
+  document.getElementById('al-stand-id').value = standId;
+  document.getElementById('allocate-modal-title').textContent = `Assign — Stand ${s.number}`;
+  document.getElementById('al-stand-info').innerHTML = `
+    <div class="alert alert-info" style="font-size:0.8rem">
+      <strong>Stand ${esc(s.number)}</strong> · ${type ? esc(type.name) : '—'} · ${s.width||'?'}m × ${s.depth||'?'}m
+    </div>`;
+
+  const sel = document.getElementById('al-exhibitor-id');
+  // Only show exhibitors not already assigned to another stand
+  sel.innerHTML = '<option value="">— unassign / leave available —</option>' +
+    STATE.exhibitors
+      .filter(e => !STATE.stands.some(st => st.exhibitorId === e.id && st.id !== standId))
+      .sort((a,b) => a.company.localeCompare(b.company))
+      .map(e => `<option value="${e.id}" ${s.exhibitorId === e.id ? 'selected' : ''}>${esc(e.company)} (${e.status})</option>`)
+      .join('');
+  document.getElementById('al-status').value = s.status || 'available';
+  document.getElementById('allocate-modal').style.display = 'flex';
+}
+
+function saveAllocation() {
+  const standId = document.getElementById('al-stand-id').value;
+  const exhibitorId = document.getElementById('al-exhibitor-id').value;
+  const status = document.getElementById('al-status').value;
+  const s = STATE.stands.find(x => x.id === standId);
+  if (!s) return;
+  s.exhibitorId = exhibitorId || null;
+  s.status = status;
+  saveState();
+  closeModal('allocate-modal');
+  renderStandsTable();
+  renderFloorPlan();
+  renderDashboard();
+  document.getElementById('fp-selection-panel').style.display = 'none';
+  toast('Allocation saved');
+}
+
+// =============================================
+// LOGISTICS
+// =============================================
+function setLogisticsView(v) {
+  logisticsView = v;
+  document.querySelectorAll('.sub-tab').forEach(b => {
+    if (b.id.startsWith('lv-')) b.classList.remove('active');
+  });
+  document.getElementById('lv-' + v + '-tab').classList.add('active');
+  renderLogistics();
+}
+
+function renderLogistics() {
+  const area = document.getElementById('logistics-content');
+  if (logisticsView === 'list') {
+    renderLogisticsList(area);
+  } else {
+    renderLogisticsCalendar(area, logisticsView);
+  }
+}
+
+function renderLogisticsList(area) {
+  const slots = [...STATE.logisticsSlots].sort((a,b) => (a.date+a.timeslot).localeCompare(b.date+b.timeslot));
+  if (!slots.length) {
+    area.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚚</div><p>No logistics slots. Add build-up and break-down schedules.</p></div>';
+    return;
+  }
+  const typeLabels = { buildup:'Build-Up', breakdown:'Break-Down', delivery:'Delivery' };
+  area.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Exhibitor</th><th>Vehicle</th><th>Parking</th><th>Notes</th><th>Actions</th></tr></thead>
+    <tbody>${slots.map(sl => {
+      const ex = STATE.exhibitors.find(e => e.id === sl.exhibitorId);
+      const vehicleLabels = { car:'Car', van_small:'Small Van', van_large:'Large Van', 'truck_7.5t':'7.5t Truck', truck_artic:'Artic Truck' };
+      return `<tr>
+        <td>${sl.date||'—'}</td>
+        <td>${sl.timeslot||'—'}–${nextSlot(sl.timeslot)}</td>
+        <td><span class="badge ${sl.type==='buildup'?'badge-booked':sl.type==='breakdown'?'badge-allocated':'badge-confirmed'}">${typeLabels[sl.type]||sl.type}</span></td>
+        <td>${ex ? esc(ex.company) : '—'}</td>
+        <td>${vehicleLabels[sl.vehicle]||sl.vehicle||'—'}</td>
+        <td>${sl.parking||'no'}</td>
+        <td style="color:var(--text-muted)">${esc(sl.notes||'')}</td>
+        <td><button class="btn-icon" onclick="openLogisticsModal('${sl.id}')">✏️</button><button class="btn-icon" onclick="deleteLogisticsSlot('${sl.id}')">🗑</button></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function renderLogisticsCalendar(area, type) {
+  const slots = STATE.logisticsSlots.filter(s => s.type === type);
+  const times = ['07:00','09:00','11:00','13:00','15:00','17:00','19:00'];
+  // Get unique dates
+  const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
+  if (!dates.length) {
+    area.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><p>No ${type==='buildup'?'build-up':'break-down'} slots scheduled.</p></div>`;
+    return;
+  }
+  let html = `<div class="logistics-calendar">
+    <div class="lc-header">Time</div>
+    ${dates.map(d => `<div class="lc-header">${d}</div>`).join('')}
+  `;
+  times.forEach(t => {
+    html += `<div class="lc-time">${t}</div>`;
+    dates.forEach(d => {
+      const entries = slots.filter(s => s.date === d && s.timeslot === t);
+      html += `<div class="lc-slot ${entries.length ? 'has-entries' : ''}">
+        ${entries.map(sl => {
+          const ex = STATE.exhibitors.find(e => e.id === sl.exhibitorId);
+          return `<div class="lc-entry" title="${ex?.company||''}">${ex ? esc(ex.company.substring(0,14)) : '?'}</div>`;
+        }).join('')}
+      </div>`;
+    });
+  });
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function nextSlot(t) {
+  if (!t) return '';
+  const [h] = t.split(':');
+  return (parseInt(h)+2).toString().padStart(2,'0') + ':00';
+}
+
+function openLogisticsModal(id) {
+  editingLogisticsId = id || null;
+  const sel = document.getElementById('lg-exhibitor-id');
+  sel.innerHTML = '<option value="">— select —</option>' +
+    STATE.exhibitors.sort((a,b)=>a.company.localeCompare(b.company))
+      .map(e => `<option value="${e.id}">${esc(e.company)}</option>`).join('');
+
+  if (id) {
+    const sl = STATE.logisticsSlots.find(x => x.id === id);
+    if (!sl) return;
+    document.getElementById('logistics-modal-title').textContent = 'Edit Logistics Slot';
+    document.getElementById('lg-id').value = sl.id;
+    sel.value = sl.exhibitorId || '';
+    document.getElementById('lg-type').value = sl.type || 'buildup';
+    document.getElementById('lg-date').value = sl.date || '';
+    document.getElementById('lg-timeslot').value = sl.timeslot || '09:00';
+    document.getElementById('lg-vehicle').value = sl.vehicle || '';
+    document.getElementById('lg-parking').value = sl.parking || 'no';
+    document.getElementById('lg-notes').value = sl.notes || '';
+  } else {
+    document.getElementById('logistics-modal-title').textContent = 'Add Logistics Slot';
+    document.getElementById('lg-id').value = '';
+    sel.value = '';
+    document.getElementById('lg-type').value = logisticsView !== 'list' ? logisticsView : 'buildup';
+    document.getElementById('lg-date').value = CFG.buildUpDate || '';
+    document.getElementById('lg-timeslot').value = '09:00';
+    document.getElementById('lg-vehicle').value = '';
+    document.getElementById('lg-parking').value = 'no';
+    document.getElementById('lg-notes').value = '';
+  }
+  document.getElementById('logistics-modal').style.display = 'flex';
+}
+
+function saveLogisticsSlot() {
+  const exhibitorId = document.getElementById('lg-exhibitor-id').value;
+  if (!exhibitorId) { toast('Select an exhibitor', 'error'); return; }
+  const data = {
+    exhibitorId,
+    type: document.getElementById('lg-type').value,
+    date: document.getElementById('lg-date').value,
+    timeslot: document.getElementById('lg-timeslot').value,
+    vehicle: document.getElementById('lg-vehicle').value,
+    parking: document.getElementById('lg-parking').value,
+    notes: document.getElementById('lg-notes').value.trim()
+  };
+  const id = document.getElementById('lg-id').value;
+  if (id) {
+    const idx = STATE.logisticsSlots.findIndex(s => s.id === id);
+    if (idx >= 0) STATE.logisticsSlots[idx] = { ...STATE.logisticsSlots[idx], ...data };
+  } else {
+    STATE.logisticsSlots.push({ id: uid(), ...data });
+  }
+  saveState();
+  closeModal('logistics-modal');
+  renderLogistics();
+  renderDashboard();
+  toast('Logistics slot saved');
+}
+
+function deleteLogisticsSlot(id) {
+  if (!confirm('Delete this slot?')) return;
+  STATE.logisticsSlots = STATE.logisticsSlots.filter(s => s.id !== id);
+  saveState();
+  renderLogistics();
+  toast('Slot deleted');
+}
+
+// =============================================
+// REQUIREMENTS
+// =============================================
+function renderRequirements() {
+  // Summary cards
+  const withReqs = Object.keys(STATE.requirements);
+  const totalPower = withReqs.reduce((s, id) => s + Number(STATE.requirements[id]?.powerAmps||0), 0);
+  const totalSockets = withReqs.reduce((s, id) => s + Number(STATE.requirements[id]?.powerSockets||0), 0);
+  const wiredInternet = withReqs.filter(id => ['wired','both'].includes(STATE.requirements[id]?.internetType||'')).length;
+  const totalScreens = withReqs.reduce((s, id) => s + Number(STATE.requirements[id]?.screens||0), 0);
+  const totalTables = withReqs.reduce((s, id) => s + Number(STATE.requirements[id]?.tables||0), 0);
+  const totalChairs = withReqs.reduce((s, id) => s + Number(STATE.requirements[id]?.chairs||0), 0);
+
+  document.getElementById('req-summary').innerHTML = `
+    <div class="req-summary-card"><div class="req-summary-value">${totalPower}A</div><div class="req-summary-label">Total Power (Amps)</div></div>
+    <div class="req-summary-card"><div class="req-summary-value">${totalSockets}</div><div class="req-summary-label">Total Power Sockets</div></div>
+    <div class="req-summary-card"><div class="req-summary-value">${wiredInternet}</div><div class="req-summary-label">Wired Internet Required</div></div>
+    <div class="req-summary-card"><div class="req-summary-value">${totalScreens}</div><div class="req-summary-label">Screens / Monitors</div></div>
+    <div class="req-summary-card"><div class="req-summary-value">${totalTables}</div><div class="req-summary-label">Tables</div></div>
+    <div class="req-summary-card"><div class="req-summary-value">${totalChairs}</div><div class="req-summary-label">Chairs</div></div>
+  `;
+
+  // Per-exhibitor table
+  const search = (document.getElementById('req-search')?.value || '').toLowerCase();
+  const area = document.getElementById('req-table-area');
+  const exhibitors = STATE.exhibitors.filter(e =>
+    !search || e.company.toLowerCase().includes(search)
+  );
+  if (!exhibitors.length) {
+    area.innerHTML = '<div class="empty-state"><p>No exhibitors found.</p></div>';
+    return;
+  }
+  area.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Company</th><th>Power (A/sockets)</th><th>Internet</th><th>Tables/Chairs</th><th>Screens</th><th>Notes</th><th>Edit</th></tr></thead>
+    <tbody>${exhibitors.map(e => {
+      const r = STATE.requirements[e.id] || {};
+      return `<tr>
+        <td><strong>${esc(e.company)}</strong></td>
+        <td>${r.powerAmps||0}A / ${r.powerSockets||0} sockets</td>
+        <td>${r.internetType||'none'}${r.internetMbps?' ('+r.internetMbps+'Mbps)':''}</td>
+        <td>${r.tables||0} tables / ${r.chairs||0} chairs</td>
+        <td>${r.screens||0}</td>
+        <td style="color:var(--text-muted);font-size:0.75rem">${esc((r.powerNotes||'')+' '+(r.cateringNotes||'')+' '+(r.other||'')).trim()||'—'}</td>
+        <td><button class="btn-icon" onclick="openReqModal('${e.id}')">✏️</button></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function openReqModal(exhibitorId) {
+  const e = STATE.exhibitors.find(x => x.id === exhibitorId);
+  if (!e) return;
+  const r = STATE.requirements[exhibitorId] || {};
+  document.getElementById('req-modal-title').textContent = `Requirements — ${e.company}`;
+  document.getElementById('rq-exhibitor-id').value = exhibitorId;
+  document.getElementById('rq-power-amps').value = r.powerAmps || '';
+  document.getElementById('rq-power-sockets').value = r.powerSockets || '';
+  document.getElementById('rq-power-notes').value = r.powerNotes || '';
+  document.getElementById('rq-internet-type').value = r.internetType || '';
+  document.getElementById('rq-internet-mbps').value = r.internetMbps || '';
+  document.getElementById('rq-tables').value = r.tables || '';
+  document.getElementById('rq-chairs').value = r.chairs || '';
+  document.getElementById('rq-furniture-notes').value = r.furnitureNotes || '';
+  document.getElementById('rq-screens').value = r.screens || '';
+  document.getElementById('rq-pa').value = r.pa || '';
+  document.getElementById('rq-catering').value = r.cateringNotes || '';
+  document.getElementById('rq-other').value = r.other || '';
+  document.getElementById('req-modal').style.display = 'flex';
+}
+
+function saveRequirements() {
+  const id = document.getElementById('rq-exhibitor-id').value;
+  STATE.requirements[id] = {
+    powerAmps: Number(document.getElementById('rq-power-amps').value) || 0,
+    powerSockets: Number(document.getElementById('rq-power-sockets').value) || 0,
+    powerNotes: document.getElementById('rq-power-notes').value.trim(),
+    internetType: document.getElementById('rq-internet-type').value,
+    internetMbps: Number(document.getElementById('rq-internet-mbps').value) || 0,
+    tables: Number(document.getElementById('rq-tables').value) || 0,
+    chairs: Number(document.getElementById('rq-chairs').value) || 0,
+    furnitureNotes: document.getElementById('rq-furniture-notes').value.trim(),
+    screens: Number(document.getElementById('rq-screens').value) || 0,
+    pa: document.getElementById('rq-pa').value,
+    cateringNotes: document.getElementById('rq-catering').value.trim(),
+    other: document.getElementById('rq-other').value.trim()
+  };
+  saveState();
+  closeModal('req-modal');
+  renderRequirements();
+  toast('Requirements saved');
+}
+
+// =============================================
+// MANUAL GENERATOR
+// =============================================
+function populateManualSelect() {
+  const sel = document.getElementById('manual-exhibitor-select');
+  const sorted = [...STATE.exhibitors].sort((a,b) => a.company.localeCompare(b.company));
+  sel.innerHTML = '<option value="">— choose exhibitor —</option>' +
+    sorted.map(e => `<option value="${e.id}">${esc(e.company)} (${e.status})</option>`).join('');
+  document.getElementById('manual-print-btn').disabled = true;
+  document.getElementById('manual-preview').innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:30px">Select an exhibitor above to preview their manual.</p>';
+}
+
+function previewManual() {
+  const id = document.getElementById('manual-exhibitor-select').value;
+  const btn = document.getElementById('manual-print-btn');
+  if (!id) { btn.disabled = true; document.getElementById('manual-preview').innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:30px">Select an exhibitor.</p>'; return; }
+  btn.disabled = false;
+  const html = generateManualHTML(id);
+  document.getElementById('manual-preview').innerHTML = html;
+  document.getElementById('manual-print-area').innerHTML = html;
+}
+
+function printManual() {
+  const id = document.getElementById('manual-exhibitor-select').value;
+  if (!id) return;
+  document.getElementById('manual-print-area').innerHTML = generateManualHTML(id);
+  window.print();
+}
+
+function generateManualHTML(exhibitorId) {
+  const e = STATE.exhibitors.find(x => x.id === exhibitorId);
+  if (!e) return '';
+  const stand = STATE.stands.find(s => s.exhibitorId === exhibitorId);
+  const stType = stand ? STATE.standTypes.find(t => t.id === stand.typeId) : null;
+  const r = STATE.requirements[exhibitorId] || {};
+  const logSlots = STATE.logisticsSlots.filter(s => s.exhibitorId === exhibitorId).sort((a,b) => (a.date+a.timeslot).localeCompare(b.date+b.timeslot));
+  const sym = CFG.currencySymbol || '£';
+  const includedItems = stType ? (stType.included||'').split(',').map(x=>x.trim()).filter(Boolean) : [];
+
+  return `
+    <div style="font-family:-apple-system,sans-serif;max-width:700px;margin:0 auto;color:#111827;line-height:1.5">
+      <div style="background:#7C3AED;color:#fff;padding:24px;border-radius:8px;margin-bottom:20px">
+        <h1 style="font-size:1.4rem;margin:0 0 4px">${esc(CFG.eventName)} — Exhibitor Manual</h1>
+        <div style="font-size:0.9rem;opacity:0.85">${esc(e.company)}</div>
+        ${CFG.eventDate ? `<div style="font-size:0.85rem;opacity:0.75;margin-top:2px">${esc(CFG.eventDate)}</div>` : ''}
+      </div>
+
+      <div style="margin-bottom:16px">
+        <h2 style="font-size:1rem;margin-bottom:8px;color:#374151">Your Stand</h2>
+        ${stand ? `
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+            <tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600;width:40%">Stand Number</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${esc(stand.number)}</td></tr>
+            <tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Stand Type</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${stType ? esc(stType.name) : '—'}</td></tr>
+            <tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Dimensions</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${stand.width||'?'}m × ${stand.depth||'?'}m${(stand.width&&stand.depth)?' ('+(stand.width*stand.depth)+'m²)':''}</td></tr>
+            <tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Position (grid)</td><td style="padding:6px 8px;border:1px solid #E5E7EB">X:${stand.x||0}m from left, Y:${stand.y||0}m from top</td></tr>
+            ${stand.notes ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Notes</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${esc(stand.notes)}</td></tr>` : ''}
+          </table>
+        ` : '<p style="color:#6B7280;font-size:0.85rem">Stand not yet assigned.</p>'}
+      </div>
+
+      ${includedItems.length ? `
+        <div style="margin-bottom:16px">
+          <h2 style="font-size:1rem;margin-bottom:8px;color:#374151">What's Included in Your Stand</h2>
+          <ul style="font-size:0.85rem;padding-left:18px">${includedItems.map(i=>`<li style="margin-bottom:4px">${esc(i)}</li>`).join('')}</ul>
+        </div>
+      ` : ''}
+
+      ${logSlots.length ? `
+        <div style="margin-bottom:16px">
+          <h2 style="font-size:1rem;margin-bottom:8px;color:#374151">Build-Up / Break-Down Schedule</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+            <thead><tr>
+              <th style="padding:6px 8px;background:#F3F4F6;border:1px solid #E5E7EB;text-align:left">Type</th>
+              <th style="padding:6px 8px;background:#F3F4F6;border:1px solid #E5E7EB;text-align:left">Date</th>
+              <th style="padding:6px 8px;background:#F3F4F6;border:1px solid #E5E7EB;text-align:left">Time Slot</th>
+              <th style="padding:6px 8px;background:#F3F4F6;border:1px solid #E5E7EB;text-align:left">Vehicle</th>
+              <th style="padding:6px 8px;background:#F3F4F6;border:1px solid #E5E7EB;text-align:left">Parking</th>
+            </tr></thead>
+            <tbody>${logSlots.map(sl => {
+              const typeLabels = { buildup:'Build-Up', breakdown:'Break-Down', delivery:'Delivery' };
+              return `<tr>
+                <td style="padding:6px 8px;border:1px solid #E5E7EB">${typeLabels[sl.type]||sl.type}</td>
+                <td style="padding:6px 8px;border:1px solid #E5E7EB">${sl.date||'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #E5E7EB">${sl.timeslot||'—'}–${nextSlot(sl.timeslot)}</td>
+                <td style="padding:6px 8px;border:1px solid #E5E7EB">${sl.vehicle||'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #E5E7EB">${sl.parking||'no'}</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table>
+        </div>
+      ` : ''}
+
+      ${Object.values(r).some(v=>v) ? `
+        <div style="margin-bottom:16px">
+          <h2 style="font-size:1rem;margin-bottom:8px;color:#374151">Services & Requirements Ordered</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+            ${r.powerAmps||r.powerSockets ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600;width:40%">Power</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${r.powerAmps||0}A / ${r.powerSockets||0} sockets${r.powerNotes?' — '+esc(r.powerNotes):''}</td></tr>` : ''}
+            ${r.internetType ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Internet</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${esc(r.internetType)}${r.internetMbps?' — '+r.internetMbps+'Mbps':''}</td></tr>` : ''}
+            ${r.tables||r.chairs ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Furniture</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${r.tables||0} table(s), ${r.chairs||0} chair(s)${r.furnitureNotes?' — '+esc(r.furnitureNotes):''}</td></tr>` : ''}
+            ${r.screens ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Screens / AV</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${r.screens} screen(s)${r.pa?' + '+esc(r.pa):''}</td></tr>` : ''}
+            ${r.cateringNotes ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Catering</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${esc(r.cateringNotes)}</td></tr>` : ''}
+            ${r.other ? `<tr><td style="padding:6px 8px;background:#F9FAFB;border:1px solid #E5E7EB;font-weight:600">Other</td><td style="padding:6px 8px;border:1px solid #E5E7EB">${esc(r.other)}</td></tr>` : ''}
+          </table>
+        </div>
+      ` : ''}
+
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;padding:14px;font-size:0.82rem;margin-bottom:16px">
+        <strong>Important Venue Rules</strong>
+        <ul style="padding-left:16px;margin-top:6px">
+          <li>All stand builds must be completed by event opening time.</li>
+          <li>No drilling, painting, or permanent fixings to hall structure.</li>
+          <li>All electrical installations must comply with venue regulations.</li>
+          <li>Exhibitors are responsible for their own stand breakdown and waste removal.</li>
+          <li>Parking passes must be displayed at all times in designated areas.</li>
+        </ul>
+      </div>
+
+      <div style="font-size:0.8rem;color:#6B7280;border-top:1px solid #E5E7EB;padding-top:12px">
+        <strong>Organiser:</strong> ${esc(CFG.companyName)} · For queries please contact your event manager.
+        <br>Generated: ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}
+      </div>
+    </div>
+  `;
+}
+
+// =============================================
+// EXPORT
+// =============================================
+function exportExhibitorCSV() {
+  const sym = CFG.currencySymbol || '£';
+  const headers = ['Company','Contact Name','Role','Email','Phone','Status','Stand Type','Contract Value','Stand Number','Sector','Website','Notes'];
+  const rows = STATE.exhibitors.map(e => {
+    const stType = STATE.standTypes.find(t => t.id === e.standTypePref);
+    const stand = STATE.stands.find(s => s.exhibitorId === e.id);
+    return [e.company, e.contactName||'', e.contactRole||'', e.email||'', e.phone||'', e.status,
+      stType?.name||'', e.contractValue||0, stand?.number||'', e.sector||'', e.website||'', e.notes||''];
+  });
+  downloadCSV([headers, ...rows], `exhibitors-${CFG.eventSlug || 'export'}.csv`);
+  toast('Exhibitor CSV downloaded');
+}
+
+function exportRequirementsCSV() {
+  const headers = ['Company','Power (Amps)','Sockets','Internet','Mbps','Tables','Chairs','Screens','PA','Catering Notes','Other Notes'];
+  const rows = STATE.exhibitors.map(e => {
+    const r = STATE.requirements[e.id] || {};
+    return [e.company, r.powerAmps||0, r.powerSockets||0, r.internetType||'none', r.internetMbps||0,
+      r.tables||0, r.chairs||0, r.screens||0, r.pa||'', r.cateringNotes||'', r.other||''];
+  });
+  downloadCSV([headers, ...rows], `requirements-${CFG.eventSlug || 'export'}.csv`);
+  toast('Requirements CSV downloaded');
+}
+
+function exportToBudget() {
+  const slug = CFG.eventSlug || 'my-event';
+  const key = `eventhive_event_${slug}_budget`;
+  let budgetData = {};
+  try { budgetData = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) {}
+  const sym = CFG.currencySymbol || '£';
+  // Create income line items for each confirmed/booked exhibitor
+  const items = STATE.exhibitors
+    .filter(e => e.status === 'booked' || e.status === 'confirmed')
+    .filter(e => e.contractValue > 0)
+    .map(e => {
+      const stand = STATE.stands.find(s => s.exhibitorId === e.id);
+      return {
+        id: 'ex-' + e.id,
+        category: 'Exhibition Revenue',
+        description: e.company + (stand ? ' — Stand ' + stand.number : ''),
+        type: 'income',
+        budgeted: Number(e.contractValue),
+        actual: e.status === 'confirmed' ? Number(e.contractValue) : 0,
+        notes: 'From Exhibitor Manager'
+      };
+    });
+  if (!budgetData.items) budgetData.items = [];
+  // Remove old exhibitor items, re-add
+  budgetData.items = budgetData.items.filter(i => !i.id.startsWith('ex-'));
+  budgetData.items.push(...items);
+  localStorage.setItem(key, JSON.stringify(budgetData));
+  toast(`${items.length} exhibitor line items exported to Budget Tracker`, 'success');
+}
+
+function printFloorPlan() {
+  // Temporarily show a print-optimised floor plan
+  const printHTML = `<div style="font-family:sans-serif;padding:20px">
+    <h1 style="font-size:1.2rem;margin-bottom:4px">${esc(CFG.eventName)} — Exhibition Floor Plan</h1>
+    <p style="font-size:0.8rem;color:#666;margin-bottom:16px">Hall: ${CFG.hallWidth}m × ${CFG.hallDepth}m · Generated ${new Date().toLocaleDateString('en-GB')}</p>
+    ${document.getElementById('floor-plan-container').innerHTML}
+    <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;font-size:0.75rem">
+      <span>⬜ Available</span><span style="color:#3B82F6">🟦 Held</span><span style="color:#F59E0B">🟧 Allocated</span><span style="color:#10B981">🟩 Confirmed</span><span style="color:#EF4444">🟥 N/A</span>
+    </div>
+  </div>`;
+  document.getElementById('manual-print-area').innerHTML = printHTML;
+  window.print();
+  document.getElementById('manual-print-area').innerHTML = '';
+}
+
+function exportFullJSON() {
+  const data = JSON.stringify(STATE, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `exhibitor-manager-${CFG.eventSlug || 'export'}.json`;
+  a.click();
+  toast('JSON exported');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm('This will replace all current data. Continue?')) return;
+      STATE.exhibitors = data.exhibitors || [];
+      STATE.standTypes = data.standTypes || [];
+      STATE.stands = data.stands || [];
+      STATE.logisticsSlots = data.logisticsSlots || [];
+      STATE.requirements = data.requirements || {};
+      saveState();
+      renderAll();
+      toast('Data imported successfully', 'success');
+    } catch(err) { toast('Invalid JSON file', 'error'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// =============================================
+// SAMPLE DATA
+// =============================================
+function loadSampleData() {
+  if (STATE.exhibitors.length > 0 && !confirm('Load sample data? This will replace existing data.')) return;
+
+  STATE.exhibitors = [];
+  STATE.stands = [];
+  STATE.logisticsSlots = [];
+  STATE.requirements = {};
+
+  if (!STATE.standTypes.length) seedDefaultStandTypes();
+
+  const shellId = STATE.standTypes.find(t => t.name === 'Shell Scheme')?.id || STATE.standTypes[0]?.id;
+  const spaceId = STATE.standTypes.find(t => t.name === 'Space Only')?.id || STATE.standTypes[1]?.id;
+  const islandId = STATE.standTypes.find(t => t.name === 'Island')?.id || STATE.standTypes[2]?.id;
+  const peninsulaId = STATE.standTypes.find(t => t.name === 'Peninsula')?.id || STATE.standTypes[3]?.id;
+
+  const companies = [
+    ['TechVision Ltd','Sarah Chen','CTO','sarah@techvision.com','confirmed','Technology',18000],
+    ['MediaWorks Group','James Murphy','Marketing Dir','james@mediaworks.com','confirmed','Media',12000],
+    ['Apex Solutions','Claire Foster','CEO','claire@apexsolutions.com','confirmed','Software',9500],
+    ['Global Dynamics','Tom Richards','Sales Dir','tom@globaldynamics.com','booked','Consulting',8000],
+    ['Innovate Corp','Lisa Park','Head of Marketing','lisa@innovatecorp.com','booked','Innovation',7500],
+    ['DataStream Inc','Ben Harris','CTO','ben@datastream.com','confirmed','Data & AI',15000],
+    ['CloudFirst Ltd','Emma Wilson','BD Manager','emma@cloudfirst.com','confirmed','Cloud Tech',9000],
+    ['Nexus Systems','Ryan Walsh','MD','ryan@nexussystems.com','booked','Systems',6500],
+    ['Vantage Analytics','Sophie Baker','Data Lead','sophie@vantage.com','booked','Analytics',8500],
+    ['FutureTech PLC','Daniel White','CMO','daniel@futuretech.com','confirmed','Deep Tech',22000],
+    ['Orion Digital','Mia Johnson','CEO','mia@oriondigital.com','confirmed','Digital','10000'],
+    ['Beacon Software','Alex Turner','CTO','alex@beaconsoftware.com','booked','Software',5500],
+    ['Horizon Group','Charlotte Evans','Partnerships','charlotte@horizon.com','enquiry','Consulting',0],
+    ['Cascade Networks','Oliver King','Sales','oliver@cascade.com','enquiry','Networking',0],
+    ['Summit AI','Isabella Moore','Founder','isa@summitai.com','confirmed','AI/ML',12500],
+    ['Prism Media','George Taylor','Director','george@prism.com','booked','Media',6000],
+    ['VectorPath Ltd','Amelia Scott','BD','amelia@vectorpath.com','confirmed','Tech',8000],
+    ['Nextera Energy','William Adams','EV Lead','william@nextera.com','booked','Energy',9500],
+    ['BlueOcean Tech','Grace Hall','CEO','grace@blueocean.com','cancelled','Tech',0],
+    ['Stride Analytics','Ethan Clarke','Analytics Dir','ethan@stride.com','booked','Data',5000],
+    ['PulseMedia','Olivia Lewis','Marketing','olivia@pulsemedia.com','confirmed','Media',7500],
+    ['CodeCraft Ltd','Henry Robinson','CTO','henry@codecraft.com','enquiry','Software',0],
+    ['StratVision','Ella Walker','Strategy','ella@stratvision.com','booked','Consulting',4500],
+    ['Quantum Labs','Jack Wright','R&D Dir','jack@quantum.com','confirmed','R&D',18500],
+    ['NovaTech','Sophia Thompson','Head of Sales','sophia@novatech.com','booked','Tech',7000],
+    ['Clearpath Systems','Liam Garcia','MD','liam@clearpath.com','confirmed','Systems',9000],
+    ['BrightEdge Media','Chloe Martinez','Content Lead','chloe@brightedge.com','booked','Media',5500],
+    ['Vertex Solutions','Noah Anderson','CEO','noah@vertex.com','confirmed','Solutions',11000],
+    ['Spire Digital','Ava Jackson','Digital Dir','ava@spiredigital.com','booked','Digital',6000],
+    ['Atlas Technology','Mason White','CTO','mason@atlas.com','confirmed','Technology',13000]
+  ];
+
+  companies.forEach(([company, contactName, role, email, status, sector, contractValue]) => {
+    STATE.exhibitors.push({
+      id: uid(), createdAt: new Date().toISOString(),
+      company, contactName, contactRole: role, email, status, sector,
+      contractValue: Number(contractValue),
+      phone: '+44 ' + Math.floor(7700000000 + Math.random()*99999999),
+      standTypePref: [shellId, spaceId, islandId, peninsulaId][Math.floor(Math.random()*4)] || shellId,
+      notes: '', description: '', website: ''
+    });
+  });
+
+  // Create 40 stands in a 40×50m hall with aisles
+  const standLayout = [
+    // Row A (y=2): Shell scheme, 3m×3m
+    ...[0,1,2,3,4,5,6,7,8,9].map((i,idx) => ({
+      number:'A'+(idx+1).toString().padStart(2,'0'), typeId:shellId, width:3, depth:3,
+      x: 2 + i*3.5, y: 2
+    })),
+    // Row B (y=7): Shell scheme
+    ...[0,1,2,3,4,5,6,7,8,9].map((i,idx) => ({
+      number:'B'+(idx+1).toString().padStart(2,'0'), typeId:shellId, width:3, depth:3,
+      x: 2 + i*3.5, y: 7
+    })),
+    // Row C (y=13): Space Only, 3×3
+    ...[0,1,2,3,4,5,6,7].map((i,idx) => ({
+      number:'C'+(idx+1).toString().padStart(2,'0'), typeId:spaceId, width:4, depth:4,
+      x: 2 + i*4.5, y: 13
+    })),
+    // Row D (y=20): Space Only
+    ...[0,1,2,3,4,5,6,7].map((i,idx) => ({
+      number:'D'+(idx+1).toString().padStart(2,'0'), typeId:spaceId, width:4, depth:4,
+      x: 2 + i*4.5, y: 20
+    })),
+    // Islands (y=28)
+    ...[0,1,2].map((i,idx) => ({
+      number:'I'+(idx+1).toString().padStart(2,'0'), typeId:islandId, width:6, depth:6,
+      x: 4 + i*12, y: 28
+    })),
+    // Peninsula row (y=38)
+    ...[0,1,2,3].map((i,idx) => ({
+      number:'P'+(idx+1).toString().padStart(2,'0'), typeId:peninsulaId, width:5, depth:4,
+      x: 3 + i*9, y: 38
+    }))
+  ];
+
+  standLayout.forEach((sl, idx) => {
+    STATE.stands.push({
+      id: uid(),
+      number: sl.number,
+      typeId: sl.typeId,
+      width: sl.width,
+      depth: sl.depth,
+      x: sl.x,
+      y: sl.y,
+      status: 'available',
+      exhibitorId: null,
+      priceOverride: 0,
+      notes: ''
+    });
+  });
+
+  // Assign exhibitors to stands
+  const confirmedExhibitors = STATE.exhibitors.filter(e => e.status === 'confirmed' || e.status === 'booked').slice(0, 28);
+  confirmedExhibitors.forEach((e, i) => {
+    if (STATE.stands[i]) {
+      STATE.stands[i].exhibitorId = e.id;
+      STATE.stands[i].status = e.status === 'confirmed' ? 'confirmed' : 'allocated';
+    }
+  });
+
+  // Logistics sample slots
+  const buildUpDate = CFG.buildUpDate || '2026-06-11';
+  const breakDownDate = CFG.breakDownDate || '2026-06-14';
+  const times = ['07:00','09:00','11:00','13:00','15:00'];
+  const vehicles = ['van_small','van_large','truck_7.5t','car','van_small'];
+  confirmedExhibitors.slice(0, 20).forEach((e, i) => {
+    STATE.logisticsSlots.push({
+      id: uid(), exhibitorId: e.id, type: 'buildup',
+      date: buildUpDate, timeslot: times[i % times.length],
+      vehicle: vehicles[i % vehicles.length], parking: i % 3 === 0 ? 'yes' : 'no', notes: ''
+    });
+    if (i < 10) {
+      STATE.logisticsSlots.push({
+        id: uid(), exhibitorId: e.id, type: 'breakdown',
+        date: breakDownDate, timeslot: times[i % times.length],
+        vehicle: vehicles[i % vehicles.length], parking: 'no', notes: ''
+      });
+    }
+  });
+
+  // Requirements for first 15 exhibitors
+  confirmedExhibitors.slice(0, 15).forEach((e, i) => {
+    STATE.requirements[e.id] = {
+      powerAmps: [13, 16, 32, 13, 16][i % 5],
+      powerSockets: [2, 4, 6, 2, 3][i % 5],
+      powerNotes: i % 4 === 0 ? 'Overnight supply required' : '',
+      internetType: ['wifi','wired','both','wifi','none'][i % 5],
+      internetMbps: [10, 50, 100, 10, 0][i % 5],
+      tables: [1, 2, 0, 1, 2][i % 5],
+      chairs: [2, 4, 0, 2, 3][i % 5],
+      furnitureNotes: '',
+      screens: [0, 1, 2, 0, 1][i % 5],
+      pa: ['', 'handheld', '', '', 'lapel'][i % 5],
+      cateringNotes: i % 5 === 1 ? 'Afternoon refreshments for 10' : '',
+      other: ''
+    };
+  });
+
+  saveState();
+  renderAll();
+  toast('Sample data loaded — 30 exhibitors, 40 stands, 2000m² hall', 'success');
+}
+
+// =============================================
+// HELPERS
+// =============================================
+function populateSelects() {
+  // Stand type filter in exhibitors tab
+  const filterType = document.getElementById('exhibitor-filter-type');
+  if (filterType) {
+    const current = filterType.value;
+    filterType.innerHTML = '<option value="">All Stand Types</option>' +
+      STATE.standTypes.map(t => `<option value="${t.id}" ${current===t.id?'selected':''}>${esc(t.name)}</option>`).join('');
+  }
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2,9);
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtNum(n) {
+  const num = Number(n) || 0;
+  return num.toLocaleString(CFG.currencyLocale || 'en-GB');
+}
+
+function toast(msg, type) {
+  const container = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast-item';
+  if (type === 'error') el.style.background = '#DC2626';
+  if (type === 'success') el.style.background = '#059669';
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function handleOverlayClick(event, modalId) {
+  if (event.target === document.getElementById(modalId)) closeModal(modalId);
+}
+
+// Keyboard ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+  }
+});
+
+// Colour helpers
+function darken(hex, pct) {
+  try {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    const f = 1 - pct/100;
+    return '#' + [r,g,b].map(c => Math.round(c*f).toString(16).padStart(2,'0')).join('');
+  } catch(e) { return hex; }
+}
+function lighten(hex, pct) {
+  try {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    const f = pct/100;
+    return '#' + [r,g,b].map(c => Math.round(Math.min(255, c + (255-c)*f)).toString(16).padStart(2,'0')).join('');
+  } catch(e) { return hex; }
+}
+
+// CSV helper
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell).replace(/"/g, '""');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>

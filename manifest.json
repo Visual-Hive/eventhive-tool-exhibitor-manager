@@ -1,0 +1,183 @@
+{
+    "slug": "exhibitor-manager",
+    "name": "Exhibitor Manager",
+    "version": "1.0.0",
+    "description": "Complete exhibition management hub: stand/booth type inventory with pricing, exhibitor profile CRUD, visual grid-based floor plan with colour-coded allocation status, logistics scheduling (build-up/break-down slots), per-exhibitor requirements tracking (power, internet, furniture, AV), exhibitor manual generator, and export to CSV/PDF with Budget Tracker bridge.",
+    "category": "operations",
+    "difficulty": "intermediate",
+    "requires_backend": false,
+    "is_published": true,
+    "author": "Visual Hive",
+    "source_repo": "https://github.com/Visual-Hive/eventhive-tool-exhibitor-manager",
+    "tool_file": "tool.html",
+    "config_schema": {
+        "sections": [
+            {
+                "id": "branding",
+                "title": "Branding",
+                "description": "Customise to match your event brand.",
+                "fields": [
+                    {
+                        "id": "companyName",
+                        "type": "text",
+                        "label": "Company / Event Name",
+                        "placeholder": "e.g. TechSummit Events",
+                        "required": true,
+                        "default": "My Event"
+                    },
+                    {
+                        "id": "primaryColor",
+                        "type": "color",
+                        "label": "Primary Brand Colour",
+                        "default": "#7C3AED"
+                    }
+                ]
+            },
+            {
+                "id": "event",
+                "title": "Event Details",
+                "description": "Set your event details for context across the tool.",
+                "fields": [
+                    {
+                        "id": "eventName",
+                        "type": "text",
+                        "label": "Event Name",
+                        "placeholder": "e.g. TechSummit 2026",
+                        "required": true,
+                        "default": "My Event"
+                    },
+                    {
+                        "id": "eventDate",
+                        "type": "text",
+                        "label": "Event Date",
+                        "placeholder": "e.g. 12–13 June 2026",
+                        "default": ""
+                    },
+                    {
+                        "id": "eventSlug",
+                        "type": "text",
+                        "label": "Event Slug (for ecosystem links)",
+                        "placeholder": "e.g. techsummit-2026",
+                        "description": "Used to share data with Budget Tracker and other tools.",
+                        "default": "my-event"
+                    }
+                ]
+            },
+            {
+                "id": "hall",
+                "title": "Hall Dimensions",
+                "description": "Define the exhibition hall size for the floor plan grid.",
+                "fields": [
+                    {
+                        "id": "hallWidth",
+                        "type": "number",
+                        "label": "Hall Width (metres)",
+                        "default": 40,
+                        "min": 10,
+                        "max": 500
+                    },
+                    {
+                        "id": "hallDepth",
+                        "type": "number",
+                        "label": "Hall Depth (metres)",
+                        "default": 50,
+                        "min": 10,
+                        "max": 500
+                    }
+                ]
+            },
+            {
+                "id": "financial",
+                "title": "Financial",
+                "description": "Configure currency and revenue targets.",
+                "fields": [
+                    {
+                        "id": "currency",
+                        "type": "text",
+                        "label": "Currency Code (ISO 4217)",
+                        "placeholder": "GBP",
+                        "default": "GBP"
+                    },
+                    {
+                        "id": "currencySymbol",
+                        "type": "text",
+                        "label": "Currency Symbol",
+                        "placeholder": "£",
+                        "default": "£"
+                    },
+                    {
+                        "id": "currencyLocale",
+                        "type": "text",
+                        "label": "Currency Locale",
+                        "placeholder": "en-GB",
+                        "default": "en-GB"
+                    },
+                    {
+                        "id": "revenueTarget",
+                        "type": "number",
+                        "label": "Exhibition Revenue Target",
+                        "description": "Total target revenue from stand bookings.",
+                        "default": 100000,
+                        "min": 0
+                    }
+                ]
+            },
+            {
+                "id": "logistics",
+                "title": "Logistics",
+                "description": "Build-up and break-down configuration.",
+                "fields": [
+                    {
+                        "id": "buildUpDate",
+                        "type": "text",
+                        "label": "Build-Up Date",
+                        "placeholder": "e.g. 11 June 2026",
+                        "default": ""
+                    },
+                    {
+                        "id": "breakDownDate",
+                        "type": "text",
+                        "label": "Break-Down Date",
+                        "placeholder": "e.g. 14 June 2026",
+                        "default": ""
+                    },
+                    {
+                        "id": "defaultStandTypes",
+                        "type": "json",
+                        "label": "Default Stand Types",
+                        "description": "Stand type names pre-seeded when the tool first loads.",
+                        "default": [
+                            "Shell Scheme",
+                            "Space Only",
+                            "Island",
+                            "Peninsula",
+                            "Custom"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "default_config": {
+        "companyName": "My Event",
+        "primaryColor": "#7C3AED",
+        "eventName": "My Event",
+        "eventDate": "",
+        "eventSlug": "my-event",
+        "hallWidth": 40,
+        "hallDepth": 50,
+        "currency": "GBP",
+        "currencySymbol": "£",
+        "currencyLocale": "en-GB",
+        "revenueTarget": 100000,
+        "buildUpDate": "",
+        "breakDownDate": "",
+        "defaultStandTypes": [
+            "Shell Scheme",
+            "Space Only",
+            "Island",
+            "Peninsula",
+            "Custom"
+        ]
+    }
+}
